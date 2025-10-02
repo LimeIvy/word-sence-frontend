@@ -37,7 +37,7 @@
   --sidebar-border: oklch(0.644 0.0405 52.3917);
   --sidebar-ring: oklch(0.6083 0.0623 44.3588);
   --font-sans: DM Sans, sans-serif;
-  --font-serif: Georgia, serif;
+  --font-serif: var(--font-noto-serif-jp), Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: 0.5rem;
   --shadow-x: 2px;
@@ -92,7 +92,7 @@
   --sidebar-border: oklch(0.4063 0.0255 40.3627);
   --sidebar-ring: oklch(0.7272 0.0539 52.332);
   --font-sans: DM Sans, sans-serif;
-  --font-serif: Georgia, serif;
+  --font-serif: var(--font-noto-serif-jp), Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: 0.5rem;
   --shadow-x: 2px;
@@ -162,4 +162,20 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+}
+
+/* 和紙風の背景ユーティリティ */
+.bg-washi {
+  background-image:
+    radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 0),
+    radial-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 0),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85));
+  background-size:
+    16px 16px,
+    24px 24px,
+    auto;
+  background-position:
+    0 0,
+    8px 8px,
+    0 0;
 }

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { BookOpen, BookPlus, Coins, Settings, ShoppingCart, Swords } from "lucide-react";
+import { BookOpen, BookPlus, Settings, ShoppingCart, Star, Swords } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const menu = [
   {
@@ -20,45 +21,65 @@ const menu = [
 const subMenu = [
   {
     name: "ガチャ",
-    icon: <Coins className="size-10" />,
+    icon: <Star className="size-6" />,
+    href: "/gacha",
   },
   {
     name: "ルール",
     icon: <BookOpen className="size-6" />,
+    href: "/rule",
   },
   {
     name: "設定",
     icon: <Settings className="size-6" />,
+    href: "/setting",
   },
 ];
 
 export default function Home() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="w-1/2 flex items-center justify-center mx-auto">
-        <Image src="/wordsence.png" alt="logo" width={700} height={700} className="object-cover" />
-      </div>
-      <div className="flex flex-col items-center justify-center w-1/2 gap-4">
-        {menu.map((item) => (
-          <Button
-            key={item.name}
-            className="h-[calc(15vh-10px)] w-[calc(30vw-10px)] overflow-hidden rounded-lg shadow-2xl bg-primary px-5 py-3 text-xl font-bold text-white transition-all duration-200 hover:bg-primary/95 active:scale-90 hover:ring-2 hover:ring-primary hover:ring-offset-2"
-          >
-            {item.icon}
-            {item.name}
-          </Button>
-        ))}
-        <div className="flex items-center justify-center w-1/2 gap-4">
-          {subMenu.map((item) => (
+    <main className="flex items-center justify-center min-h-screen">
+      <section className="grid w-full max-w-6xl grid-cols-1 gap-8 px-6 md:grid-cols-2">
+        <div className="flex items-center justify-center">
+          <figure>
+            <Image
+              src="/wordsence.png"
+              alt="ロゴ"
+              width={640}
+              height={640}
+              className="object-contain drop-shadow-xl"
+            />
+            <figcaption className="sr-only">Word Sence のロゴ</figcaption>
+          </figure>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-5">
+          {menu.map((item) => (
             <Button
               key={item.name}
-              className="h-[calc(15vh-10px)] w-[calc(30vw-10px)] overflow-hidden rounded-lg shadow-2xl bg-primary px-5 py-3 text-xl font-bold text-white transition-all duration-200 hover:bg-primary/95 active:scale-90 hover:ring-2 hover:ring-primary hover:ring-offset-2 flex flex-col items-center justify-center gap-2"
+              className="h-[calc(15vh-10px)] w-full max-w-md overflow-hidden rounded-md border border-primary/30 bg-white/90 px-6 py-4 text-xl font-semibold font-serif tracking-wider text-foreground shadow-sm transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 active:scale-95"
             >
+              <span className="mr-3">{item.icon}</span>
               <span>{item.name}</span>
             </Button>
           ))}
+          <nav aria-label="サブメニュー" className="mt-2">
+            <ul className="grid grid-cols-3 items-center justify-center gap-4">
+              {subMenu.map((item) => (
+                <li key={item.name} className="flex items-center justify-center">
+                  <Link
+                    href={item.href}
+                    className="flex aspect-square w-20 items-center justify-center rounded-full border border-primary/30 bg-white/90 text-sm font-serif tracking-wider shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/10"
+                    aria-label={item.name}
+                  >
+                    <span className="mr-1">{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
