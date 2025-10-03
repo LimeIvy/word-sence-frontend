@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { BookOpen, BookPlus, Settings, ShoppingCart, Star, Swords } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,14 +6,17 @@ const menu = [
   {
     name: "ゲーム開始",
     icon: <Swords className="size-10" />,
+    href: "/game",
   },
   {
-    name: "マイデッキ",
+    name: "デッキ編成",
     icon: <BookPlus className="size-10" />,
+    href: "/deck",
   },
   {
     name: "マーケット",
     icon: <ShoppingCart className="size-10" />,
+    href: "/market",
   },
 ];
 
@@ -47,20 +49,22 @@ export default function Home() {
               alt="ロゴ"
               width={640}
               height={640}
-              className="object-contain drop-shadow-xl"
+              className="object-contain"
             />
             <figcaption className="sr-only">Word Sence のロゴ</figcaption>
           </figure>
         </div>
         <div className="flex flex-col items-center justify-center gap-5">
           {menu.map((item) => (
-            <Button
+            <Link
               key={item.name}
-              className="h-[calc(15vh-10px)] w-full max-w-md overflow-hidden rounded-md border border-primary/30 bg-white/90 px-6 py-4 text-xl font-semibold font-serif tracking-wider text-foreground shadow-sm transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 active:scale-95"
+              href={item.href}
+              aria-label={item.name}
+              className="h-[calc(15vh-10px)] w-full max-w-md overflow-hidden rounded-md border border-primary/30 bg-white/90 px-6 py-4 text-xl shadow-sm transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 hover:scale-103 active:scale-90 flex items-center justify-center"
             >
               <span className="mr-3">{item.icon}</span>
               <span>{item.name}</span>
-            </Button>
+            </Link>
           ))}
           <nav aria-label="サブメニュー" className="mt-2">
             <ul className="grid grid-cols-3 items-center justify-center gap-4">
@@ -68,10 +72,10 @@ export default function Home() {
                 <li key={item.name} className="flex items-center justify-center">
                   <Link
                     href={item.href}
-                    className="flex aspect-square w-20 items-center justify-center rounded-full border border-primary/30 bg-white/90 text-sm font-serif tracking-wider shadow-sm transition-colors hover:border-primary/60 hover:bg-primary/10"
+                    className="flex flex-col aspect-square w-20 items-center justify-center rounded-full border border-primary/30 bg-white/90 text-sm shadow-sm transition-all duration-200  hover:border-primary/60 hover:bg-primary/10 hover:scale-103 active:scale-90"
                     aria-label={item.name}
                   >
-                    <span className="mr-1">{item.icon}</span>
+                    <span className="mb-1">{item.icon}</span>
                     <span>{item.name}</span>
                   </Link>
                 </li>
