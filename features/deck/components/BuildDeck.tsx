@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { userCardMockDataList } from "../mock/userMockData";
 import { DeckCardDetail, OwnedCardWithDetail } from "../types/deck";
+import { CardSearchButton } from "./CardSearchButton";
 import { CardComponent } from "./OwnerCard";
 
 export default function BuildDeck() {
@@ -34,11 +35,11 @@ export default function BuildDeck() {
    */
   const handleMoveToDeck = async (userCardId: number) => {
     if (deck.length >= maxDeckSize) return;
-    const activeOwnedCard = ownedCards.find((oc) => oc.id === userCardId);
-    if (!activeOwnedCard) return;
+    const selectedOwnedCard = ownedCards.find((ownedCard) => ownedCard.id === userCardId);
+    if (!selectedOwnedCard) return;
 
     // 空いている最初のスロットを見つける
-    const usedPositions = deck.map((dc) => dc.position).sort((a, b) => a - b);
+    const usedPositions = deck.map((deckCard) => deckCard.position).sort((a, b) => a - b);
     let nextPosition = 1;
     for (const pos of usedPositions) {
       if (pos === nextPosition) {
@@ -53,10 +54,10 @@ export default function BuildDeck() {
       {
         position: nextPosition,
         user_card_id: userCardId,
-        card: activeOwnedCard.card,
+        card: selectedOwnedCard.card,
       },
     ]);
-    setOwnedCards(ownedCards.filter((oc) => oc.id !== userCardId));
+    setOwnedCards(ownedCards.filter((ownedCard) => ownedCard.id !== userCardId));
   };
 
   /**
@@ -64,24 +65,56 @@ export default function BuildDeck() {
    * @param userCardId 所持カードID
    */
   const handleMoveToOwned = async (userCardId: number) => {
-    const deckCard = deck.find((dc) => dc.user_card_id === userCardId);
-    if (!deckCard) return;
-    setDeck(deck.filter((dc) => dc.user_card_id !== userCardId));
+    const selectedDeckCard = deck.find((deckCard) => deckCard.user_card_id === userCardId);
+    if (!selectedDeckCard) return;
+    setDeck(deck.filter((deckCard) => deckCard.user_card_id !== userCardId));
     setOwnedCards([
       ...ownedCards,
       {
         id: userCardId,
         user_id: userId,
-        card_id: deckCard.card.id,
+        card_id: selectedDeckCard.card.id,
         is_locked: false,
-        card: deckCard.card,
+        card: selectedDeckCard.card,
       },
     ]);
   };
 
+  /**
+   * 検索からカードを選択してデッキに追加
+   * @param selectedCard 選択されたカード
+   */
+  const handleSelectCardFromSearch = (selectedCard: OwnedCardWithDetail) => {
+    if (deck.length >= maxDeckSize) return;
+
+    // 空いている最初のスロットを見つける
+    const usedPositions = deck.map((deckCard) => deckCard.position).sort((a, b) => a - b);
+    let nextPosition = 1;
+    for (const pos of usedPositions) {
+      if (pos === nextPosition) {
+        nextPosition++;
+      } else {
+        break;
+      }
+    }
+
+    // デッキに追加
+    setDeck([
+      ...deck,
+      {
+        position: nextPosition,
+        user_card_id: selectedCard.id,
+        card: selectedCard.card,
+      },
+    ]);
+
+    // 所持カードから削除
+    setOwnedCards(ownedCards.filter((ownedCard) => ownedCard.id !== selectedCard.id));
+  };
+
   /* デッキスロット */
   const deckSlots = Array.from({ length: maxDeckSize }, (_, i) => {
-    return deck.find((dc) => dc.position === i + 1) || null;
+    return deck.find((deckCard) => deckCard.position === i + 1) || null;
   });
 
   if (loading) {
@@ -99,17 +132,17 @@ export default function BuildDeck() {
         <h2 className="flex items-center justify-center text-lg font-bold mb-5">デッキ</h2>
         <div className="rounded-lg p-2 bg-gray-50 flex-1 overflow-y-auto">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(100px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
-            {deckSlots.map((deckCard, index) => (
+            {deckSlots.map((deckSlotCard, index) => (
               <div key={`deck-slot-${index}`}>
-                {deckCard ? (
+                {deckSlotCard ? (
                   <CardComponent
                     ownedCard={{
-                      id: deckCard.user_card_id,
+                      id: deckSlotCard.user_card_id,
                       user_id: userId,
-                      card_id: deckCard.card.id,
-                      card: deckCard.card,
+                      card_id: deckSlotCard.card.id,
+                      card: deckSlotCard.card,
                     }}
-                    onDoubleClick={() => handleMoveToOwned(deckCard.user_card_id)}
+                    onDoubleClick={() => handleMoveToOwned(deckSlotCard.user_card_id)}
                   />
                 ) : (
                   <div className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg bg-white/50 flex items-center justify-center w-20 sm:w-24 md:w-30 lg:w-36">
@@ -126,14 +159,23 @@ export default function BuildDeck() {
 
       {/* 所持カード */}
       <div className="w-1/2 flex flex-col border border-primary/30 p-4">
-        <h2 className="flex items-center justify-center text-lg font-bold mb-5">所持カード</h2>
+        <div className="flex items-center justify-center mb-5 relative">
+          <h2 className="text-lg font-bold">所持カード</h2>
+          <div className="absolute right-0">
+            <CardSearchButton
+              onSelectCard={handleSelectCardFromSearch}
+              excludeCardIds={deck.map((deckCard) => deckCard.user_card_id)}
+            />
+          </div>
+        </div>
+
         <div className="border-2 border-dashed rounded-lg p-2 bg-gray-50 border-gray-300 flex-1 overflow-y-auto">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(100px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
-            {ownedCards.map((ownedCard, index) => (
+            {ownedCards.map((ownedCardItem, index) => (
               <CardComponent
-                key={`owned-card-${ownedCard.id}-${index}`}
-                ownedCard={ownedCard}
-                onDoubleClick={() => handleMoveToDeck(ownedCard.id)}
+                key={`owned-card-${ownedCardItem.id}-${index}`}
+                ownedCard={ownedCardItem}
+                onDoubleClick={() => handleMoveToDeck(ownedCardItem.id)}
               />
             ))}
             {ownedCards.length === 0 && (
