@@ -11,49 +11,54 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export const Card = ({ children, className = "", rarity = "並", ...props }: CardProps) => {
   const showVertical = true;
 
-  // カードサイズに応じたフォントサイズを計算
-  const getFontSizes = (className: string) => {
-    // w-20 (80px) の場合
-    if (className.includes("w-20")) {
-      return {
+  const isResponsive =
+    className.includes("sm:") || className.includes("md:") || className.includes("lg:");
+
+  const fontSizes = isResponsive
+    ? {
         textSize: showVertical ? "10px" : "12px",
         raritySize: "11px",
-        letterSpacing: showVertical ? "1px" : "1.5px",
-      };
-    }
-    // w-24 (96px) の場合
-    if (className.includes("w-24")) {
-      return {
-        textSize: showVertical ? "13px" : "15px",
-        raritySize: "13px",
-        letterSpacing: showVertical ? "1.5px" : "2px",
-      };
-    }
-    // w-30 (120px) の場合
-    if (className.includes("w-30")) {
-      return {
-        textSize: showVertical ? "15px" : "17px",
-        raritySize: "15px",
-        letterSpacing: showVertical ? "1.2px" : "1.8px",
-      };
-    }
-    // w-36 (144px) の場合
-    if (className.includes("w-36")) {
-      return {
-        textSize: showVertical ? "18px" : "20px",
-        raritySize: "18px",
-        letterSpacing: showVertical ? "1.5px" : "2px",
-      };
-    }
-    // デフォルト（大きめ）
-    return {
-      textSize: showVertical ? "22px" : "24px",
-      raritySize: "15px",
-      letterSpacing: showVertical ? "2px" : "3px",
-    };
-  };
+        letterSpacing: showVertical ? "0.1em" : "1.5px",
+      }
+    : (() => {
+        if (className.includes("w-20"))
+          return {
+            textSize: showVertical ? "10px" : "12px",
+            raritySize: "11px",
+            letterSpacing: showVertical ? "1px" : "1.5px",
+          };
+        if (className.includes("w-24"))
+          return {
+            textSize: showVertical ? "13px" : "15px",
+            raritySize: "13px",
+            letterSpacing: showVertical ? "1.5px" : "2px",
+          };
+        if (className.includes("w-30"))
+          return {
+            textSize: showVertical ? "15px" : "17px",
+            raritySize: "15px",
+            letterSpacing: showVertical ? "1.2px" : "1.8px",
+          };
+        if (className.includes("w-36"))
+          return {
+            textSize: showVertical ? "18px" : "20px",
+            raritySize: "18px",
+            letterSpacing: showVertical ? "1.5px" : "2px",
+          };
+        return {
+          textSize: showVertical ? "22px" : "24px",
+          raritySize: "15px",
+          letterSpacing: showVertical ? "2px" : "3px",
+        };
+      })();
 
-  const fontSizes = getFontSizes(className);
+  // 共通のテキストシャドウ
+  const textShadow = `
+    black 1px 1px 0, black -1px -1px 0,
+    black -1px 1px 0, black 1px -1px 0,
+    black 0px 1px 0, black 0px -1px 0,
+    black -1px 0 0, black 1px 0 0
+  `;
 
   // ランクごとに明確に色分け
   const colors = {
@@ -144,7 +149,7 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
             }}
           />
 
-          {/* 水流模様（ロゴの波紋に合わせて） */}
+          {/* 水流模様 */}
           <svg
             className="absolute inset-0 w-full h-full opacity-15"
             style={{ mixBlendMode: "overlay" }}
@@ -184,7 +189,7 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
             <rect width="100%" height="100%" fill={`url(#wave-${rarity})`} />
           </svg>
 
-          {/* 桜吹雪（ロゴの桜に合わせて） */}
+          {/* 桜吹雪 */}
           <div className="absolute inset-0 opacity-30">
             {[...Array(8)].map((_, i) => (
               <div
@@ -206,7 +211,7 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
             ))}
           </div>
 
-          {/* 金箔・光の粒子エフェクト */}
+          {/* 金箔 */}
           {(rarity === "極" || rarity === "傑") && (
             <div
               className="absolute inset-0"
@@ -223,7 +228,7 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
             />
           )}
 
-          {/* 上部装飾帯 */}
+          {/* 上部装飾 */}
           <div
             className="absolute top-0 left-0 right-0 h-8 flex items-center justify-center"
             style={{
@@ -246,35 +251,18 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
             </div>
           </div>
 
-          {/* レアリティ印章 - 梅の花 */}
+          {/* レアリティ印章 */}
           <div
             aria-label={`レアリティ: ${rarity}`}
-            className="absolute top-1 right-1 flex items-center justify-center font-black"
+            className="absolute top-1 right-1 flex items-center justify-center font-black w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14"
             style={{
-              width:
-                fontSizes.raritySize === "11px"
-                  ? "32px"
-                  : fontSizes.raritySize === "13px"
-                    ? "40px"
-                    : fontSizes.raritySize === "15px"
-                      ? "48px"
-                      : "56px",
-              height:
-                fontSizes.raritySize === "11px"
-                  ? "32px"
-                  : fontSizes.raritySize === "13px"
-                    ? "40px"
-                    : fontSizes.raritySize === "15px"
-                      ? "48px"
-                      : "56px",
               position: "relative",
             }}
           >
-            {/* 梅の花パターン */}
+            {/* 梅の花 */}
             <div
+              className="absolute inset-0"
               style={{
-                position: "absolute",
-                inset: 0,
                 backgroundImage: `
                 radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
                 radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
@@ -283,70 +271,38 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
                 radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%)
               `,
                 backgroundPosition: "50% 0%, 5% 40%, 95% 40%, 23% 95%, 78% 95%",
-                backgroundSize:
-                  fontSizes.raritySize === "11px"
-                    ? "20px 20px"
-                    : fontSizes.raritySize === "13px"
-                      ? "24px 24px"
-                      : fontSizes.raritySize === "15px"
-                        ? "28px 28px"
-                        : "32px 32px",
+                backgroundSize: "60% 60%",
                 backgroundRepeat: "no-repeat",
                 filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.6)) ${rarity === "極" ? `drop-shadow(0 0 10px ${colors.glow})` : ""}`,
                 animation: rarity === "極" ? "ume-pulse 2s ease-in-out infinite" : "none",
               }}
             />
 
-            {/* 中央の文字 - 見やすく */}
+            {/* 中央の文字 */}
             <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: fontSizes.raritySize,
-                color: "#FFFFFF",
-                textShadow: `
-                -1px -1px 0 #000,
-                1px -1px 0 #000,
-                -1px 1px 0 #000,
-                1px 1px 0 #000,
-                0 2px 4px rgba(0,0,0,0.9),
-                0 0 8px rgba(0,0,0,0.8)
-              `,
-                fontWeight: "900",
-                WebkitTextStroke: "0.1px #000",
-                zIndex: 1,
-              }}
+              className="absolute inset-0 flex items-center justify-center text-white font-black z-10 text-xs sm:text-sm md:text-base lg:text-lg"
+              style={{ textShadow }}
             >
               {colors.name}
             </div>
           </div>
 
-          {/* メイン文字 - シンプルに */}
+          {/* メイン文字 */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white"
             style={{
               fontSize: fontSizes.textSize,
               letterSpacing: fontSizes.letterSpacing,
               writingMode: showVertical ? "vertical-rl" : "horizontal-tb",
               textOrientation: showVertical ? "upright" : "mixed",
-              color: "#FFFFFF",
-              textShadow: `
-                -2px -2px 0 #000,
-                2px -2px 0 #000,
-                -2px 2px 0 #000,
-                2px 2px 0 #000,
-                0 3px 6px rgba(0,0,0,0.8)
-              `,
-              fontWeight: "900",
+              textShadow,
+              fontWeight: "700",
             }}
           >
             {children}
           </div>
 
-          {/* 下部装飾 - 波模様 */}
+          {/* 下部装飾 */}
           <div
             className="absolute bottom-0 left-0 right-0 h-8"
             style={{
@@ -367,30 +323,15 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
       </div>
 
       <style>{`
-        @keyframes sparkle {
-          0%, 100% { opacity: 1; }
+        @keyframes sparkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes ume-pulse { 
+          0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) drop-shadow(0 0 10px ${colors.glow}); }
+          50% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${colors.glow}) drop-shadow(0 0 30px ${colors.glow}80); }
+        }
+        @keyframes sakura-fall { 
+          0% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
           50% { opacity: 0.6; }
-        }
-        @keyframes ume-pulse {
-          0%, 100% { 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) drop-shadow(0 0 10px ${colors.glow});
-          }
-          50% { 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)) drop-shadow(0 0 20px ${colors.glow}) drop-shadow(0 0 30px ${colors.glow}80);
-          }
-        }
-        @keyframes sakura-fall {
-          0% { 
-            transform: translateY(0) rotate(0deg);
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 0.6;
-          }
-          100% { 
-            transform: translateY(10px) rotate(180deg);
-            opacity: 0.3;
-          }
+          100% { transform: translateY(10px) rotate(180deg); opacity: 0.3; }
         }
       `}</style>
     </div>
