@@ -113,7 +113,7 @@ export default function BuildDeck() {
                   />
                 ) : (
                   <div className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg bg-white/50 flex items-center justify-center w-20 sm:w-24 md:w-30 lg:w-36">
-                    <span className="text-gray-400 text-xs sm:text-sm md:text-base lg:text-lg font-medium">
+                    <span className="text-gray-400 select-none text-xs sm:text-sm md:text-base lg:text-lg font-medium">
                       {index + 1}
                     </span>
                   </div>
