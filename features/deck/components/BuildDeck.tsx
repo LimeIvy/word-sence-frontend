@@ -142,7 +142,7 @@ export default function BuildDeck() {
                       card_id: deckSlotCard.card.id,
                       card: deckSlotCard.card,
                     }}
-                    onDoubleClick={() => handleMoveToOwned(deckSlotCard.user_card_id)}
+                    onClick={() => handleMoveToOwned(deckSlotCard.user_card_id)}
                   />
                 ) : (
                   <div className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg bg-white/50 flex items-center justify-center w-20 sm:w-24 md:w-30 lg:w-36">
@@ -175,7 +175,7 @@ export default function BuildDeck() {
               <CardComponent
                 key={`owned-card-${ownedCardItem.id}-${index}`}
                 ownedCard={ownedCardItem}
-                onDoubleClick={() => handleMoveToDeck(ownedCardItem.id)}
+                onClick={() => handleMoveToDeck(ownedCardItem.id)}
               />
             ))}
             {ownedCards.length === 0 && (

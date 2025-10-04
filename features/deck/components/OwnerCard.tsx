@@ -4,13 +4,13 @@ import { CardItem } from "./CardItem";
 // カードコンポーネント
 export function CardComponent({
   ownedCard,
-  onDoubleClick,
+  onClick,
 }: {
   ownedCard: OwnedCardWithDetail;
-  onDoubleClick?: () => void;
+  onClick?: () => void;
 }) {
   return (
-    <div onDoubleClick={onDoubleClick}>
+    <div onClick={onClick} className="cursor-pointer">
       <CardItem ownedCard={ownedCard} />
     </div>
   );
