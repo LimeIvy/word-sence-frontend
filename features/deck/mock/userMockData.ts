@@ -8,10 +8,10 @@ export const userCardMockDataList = {
   [1]: {
     id: 1,
     user_id: userMockData.id,
-    card_id: "card-000",
+    card_id: "00001",
     is_locked: false,
     card: {
-      id: "card-000",
+      id: "00001",
       name: "ロシア",
       rarity: "common",
     },
@@ -19,10 +19,10 @@ export const userCardMockDataList = {
   [2]: {
     id: 2,
     user_id: userMockData.id,
-    card_id: "card-001",
+    card_id: "00002",
     is_locked: false,
     card: {
-      id: "card-001",
+      id: "00002",
       name: "にほん",
       rarity: "rare",
     },
@@ -30,10 +30,10 @@ export const userCardMockDataList = {
   [4]: {
     id: 4,
     user_id: userMockData.id,
-    card_id: "card-003",
+    card_id: "00003",
     is_locked: false,
     card: {
-      id: "card-003",
+      id: "00003",
       name: "あいち",
       rarity: "super_rare",
     },
@@ -41,10 +41,10 @@ export const userCardMockDataList = {
   [5]: {
     id: 5,
     user_id: userMockData.id,
-    card_id: "card-004",
+    card_id: "00004",
     is_locked: false,
     card: {
-      id: "card-004",
+      id: "00004",
       name: "あめりか",
       rarity: "epic",
     },
@@ -52,10 +52,10 @@ export const userCardMockDataList = {
   [6]: {
     id: 6,
     user_id: userMockData.id,
-    card_id: "card-005",
+    card_id: "00005",
     is_locked: false,
     card: {
-      id: "card-005",
+      id: "00005",
       name: "ホーム・アンド・アウェー",
       rarity: "legendary",
     },

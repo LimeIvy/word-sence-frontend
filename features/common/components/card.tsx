@@ -6,9 +6,10 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   rarity?: CardRarity;
+  cardId?: string | number;
 }
 
-export const Card = ({ children, className = "", rarity = "並", ...props }: CardProps) => {
+export const Card = ({ children, className = "", rarity = "並", cardId, ...props }: CardProps) => {
   const showVertical = true;
 
   const isResponsive =
@@ -318,6 +319,14 @@ export const Card = ({ children, className = "", rarity = "並", ...props }: Car
                 opacity="0.6"
               />
             </svg>
+            {/* カードID表示 */}
+            {cardId && (
+              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                <span className="text-white text-xs font-bold" style={{ textShadow }}>
+                  {cardId}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
