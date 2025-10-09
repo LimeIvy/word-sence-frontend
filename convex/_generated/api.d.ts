@@ -13,7 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as card_card from "../card/card.js";
+import type * as card from "../card.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -24,7 +24,7 @@ import type * as card_card from "../card/card.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  "card/card": typeof card_card;
+  card: typeof card;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
