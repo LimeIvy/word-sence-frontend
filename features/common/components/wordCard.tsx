@@ -2,14 +2,20 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 export type CardRarity = "並" | "良" | "優" | "傑" | "極";
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+export interface WordCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   rarity?: CardRarity;
   cardId?: string | number;
 }
 
-export const Card = ({ children, className = "", rarity = "並", cardId, ...props }: CardProps) => {
+export const WordCard = ({
+  children,
+  className = "",
+  rarity = "並",
+  cardId,
+  ...props
+}: WordCardProps) => {
   const showVertical = true;
 
   const isResponsive =
@@ -107,7 +113,7 @@ export const Card = ({ children, className = "", rarity = "並", cardId, ...prop
 
   return (
     <div
-      className={`relative overflow-hidden select-none cursor-pointer transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-3 transform-gpu ${className}`}
+      className={`relative overflow-hidden select-none cursor-pointer ${className}`}
       style={{
         filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.5))",
       }}
