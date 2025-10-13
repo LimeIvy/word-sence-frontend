@@ -3,12 +3,12 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 
 export const getLegendary = query({
-  args: { paginationOpts: paginationOptsValidator },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
     return await ctx.db
       .query("card")
       .filter((q) => q.eq(q.field("rarity"), "legendary"))
-      .paginate(args.paginationOpts);
+      .collect();
   },
 });
 
