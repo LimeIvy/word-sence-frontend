@@ -11,22 +11,10 @@ export const TOTAL_CARDS = 15000;
 
 export const rarities: RarityConfig[] = [
   {
-    value: "並",
-    queryName: "getCommon",
-    probability: 0.5,
-    count: 7500,
-  },
-  {
-    value: "良",
-    queryName: "getRare",
-    probability: 0.3,
-    count: 4500,
-  },
-  {
-    value: "優",
-    queryName: "getSuperRare",
-    probability: 0.15,
-    count: 2250,
+    value: "極",
+    queryName: "getLegendary",
+    probability: 0.005,
+    count: 75,
   },
   {
     value: "傑",
@@ -35,9 +23,21 @@ export const rarities: RarityConfig[] = [
     count: 675,
   },
   {
-    value: "極",
-    queryName: "getLegendary",
-    probability: 0.005,
-    count: 75,
+    value: "優",
+    queryName: "getSuperRare",
+    probability: 0.15,
+    count: 2250,
+  },
+  {
+    value: "良",
+    queryName: "getRare",
+    probability: 0.3,
+    count: 4500,
+  },
+  {
+    value: "並",
+    queryName: "getCommon",
+    probability: 0.5,
+    count: 7500,
   },
 ];

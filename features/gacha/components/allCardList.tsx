@@ -1,11 +1,8 @@
 "use client";
 
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../convex/_generated/api";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rarities } from "../types/ratity";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,15 +13,43 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { rarities, RarityConfig } from "../types/ratity";
 
-function CardList({ rarityConfig }: { rarityConfig: (typeof rarities)[number] }) {
-  const queryFunc = api.card[rarityConfig.queryName];
+// Legendaryカード用のリスト
+function LegendaryCardList() {
+  const cards = useQuery(api.card.getLegendary);
 
+  if (!cards) {
+    return <div className="p-4 text-center">Loading...</div>;
+  }
+
+  return (
+    <TabsContent value="極">
+      {cards.map((card) => (
+        <div key={card._id} className="flex items-center justify-between gap-5 text-xl p-1">
+          <div>{card.text}</div>
+          <div>{card.card_number}</div>
+        </div>
+      ))}
+    </TabsContent>
+  );
+}
+
+// ページネーションが必要なクエリ名のみを抽出した型
+type PaginatedQueryName = Exclude<(typeof rarities)[number]["queryName"], "getLegendary">;
+
+// Legendaryカード以外のリストコンポーネント
+function PaginatedCardList({
+  rarityConfig,
+}: {
+  rarityConfig: RarityConfig & { queryName: PaginatedQueryName };
+}) {
   const {
     results: cards,
     status,
     loadMore,
-  } = usePaginatedQuery(queryFunc, {}, { initialNumItems: 500 });
+  } = usePaginatedQuery(api.card[rarityConfig.queryName], {}, { initialNumItems: 500 });
 
   if (!cards) {
     return <div className="p-4 text-center">Loading...</div>;
@@ -58,7 +83,7 @@ export default function AllCardList() {
   return (
     <div>
       <Dialog>
-        <DialogTrigger>
+        <DialogTrigger asChild>
           <Button>排出カード一覧</Button>
         </DialogTrigger>
         <DialogContent>
@@ -78,9 +103,18 @@ export default function AllCardList() {
                   ))}
                 </TabsList>
                 <div className="max-h-[500px] overflow-y-auto mt-1 px-4 py-2 border">
-                  {rarities.map((rarity) => (
-                    <CardList key={rarity.value} rarityConfig={rarity} />
-                  ))}
+                  {rarities.map((rarity) => {
+                    if (rarity.queryName === "getLegendary") {
+                      return <LegendaryCardList key={rarity.value} />;
+                    } else {
+                      return (
+                        <PaginatedCardList
+                          key={rarity.value}
+                          rarityConfig={rarity as RarityConfig & { queryName: PaginatedQueryName }}
+                        />
+                      );
+                    }
+                  })}
                 </div>
               </Tabs>
             </DialogDescription>
