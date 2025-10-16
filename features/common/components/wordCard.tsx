@@ -296,7 +296,7 @@ export const WordCard = ({
 
           {/* メイン文字 */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words text-xs sm:text-sm md:text-base lg:text-lg"
             style={{
               fontSize: fontSizes.textSize,
               letterSpacing: fontSizes.letterSpacing,

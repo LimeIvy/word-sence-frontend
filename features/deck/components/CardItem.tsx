@@ -12,9 +12,7 @@ export function CardItem({ ownedCard }: { ownedCard: OwnedCardWithDetail }) {
       rarity={japaneseRarity}
       cardId={ownedCard.card.id}
     >
-      <div className="p-1 text-center break-words text-xs sm:text-sm md:text-base lg:text-lg">
-        {ownedCard.card.name}
-      </div>
+      {ownedCard.card.name}
     </WordCard>
   );
 }
