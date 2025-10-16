@@ -1,4 +1,4 @@
-import { Card } from "../../common/components/card";
+import { WordCard } from "../../common/components/wordCard";
 import { OwnedCardWithDetail } from "../types/deck";
 import { mapRarityToJapanese } from "../utils/rarity-utils";
 
@@ -7,14 +7,12 @@ export function CardItem({ ownedCard }: { ownedCard: OwnedCardWithDetail }) {
   const japaneseRarity = mapRarityToJapanese(ownedCard.card.rarity);
 
   return (
-    <Card
-      className="aspect-3/4 w-20 sm:w-24 md:w-30 lg:w-36"
+    <WordCard
+      className="aspect-3/4 w-20 sm:w-24 md:w-30 lg:w-36 transition-transform duration-300 hover:scale-110"
       rarity={japaneseRarity}
       cardId={ownedCard.card.id}
     >
-      <div className="p-1 text-center break-words text-xs sm:text-sm md:text-base lg:text-lg">
-        {ownedCard.card.name}
-      </div>
-    </Card>
+      {ownedCard.card.name}
+    </WordCard>
   );
 }

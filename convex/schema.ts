@@ -6,5 +6,7 @@ export default defineSchema({
     card_number: v.string(),
     text: v.string(),
     rarity: v.string(),
-  }),
+  })
+    .index("by_rarity", ["rarity"])
+    .index("by_rarity_and_number", ["rarity", "card_number"]),
 });

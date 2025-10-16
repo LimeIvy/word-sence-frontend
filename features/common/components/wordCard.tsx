@@ -2,14 +2,20 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 export type CardRarity = "並" | "良" | "優" | "傑" | "極";
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+export interface WordCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
   rarity?: CardRarity;
   cardId?: string | number;
 }
 
-export const Card = ({ children, className = "", rarity = "並", cardId, ...props }: CardProps) => {
+export const WordCard = ({
+  children,
+  className = "",
+  rarity = "並",
+  cardId,
+  ...props
+}: WordCardProps) => {
   const showVertical = true;
 
   const isResponsive =
@@ -107,7 +113,7 @@ export const Card = ({ children, className = "", rarity = "並", cardId, ...prop
 
   return (
     <div
-      className={`relative overflow-hidden select-none cursor-pointer transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-3 transform-gpu ${className}`}
+      className={`relative overflow-hidden select-none cursor-pointer ${className}`}
       style={{
         filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.5))",
       }}
@@ -290,7 +296,7 @@ export const Card = ({ children, className = "", rarity = "並", cardId, ...prop
 
           {/* メイン文字 */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words text-xs sm:text-sm md:text-base lg:text-lg"
             style={{
               fontSize: fontSizes.textSize,
               letterSpacing: fontSizes.letterSpacing,

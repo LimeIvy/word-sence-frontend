@@ -11,9 +11,9 @@ export const userCardMockDataList = {
     card_id: "00001",
     is_locked: false,
     card: {
-      id: "00001",
-      name: "ロシア",
-      rarity: "common",
+      id: "1",
+      name: "日本",
+      rarity: "legendary",
     },
   },
   [2]: {
@@ -22,9 +22,9 @@ export const userCardMockDataList = {
     card_id: "00002",
     is_locked: false,
     card: {
-      id: "00002",
-      name: "にほん",
-      rarity: "rare",
+      id: "85",
+      name: "全国",
+      rarity: "epic",
     },
   },
   [4]: {
@@ -33,8 +33,8 @@ export const userCardMockDataList = {
     card_id: "00003",
     is_locked: false,
     card: {
-      id: "00003",
-      name: "あいち",
+      id: "816",
+      name: "ユーザー",
       rarity: "super_rare",
     },
   },
@@ -44,9 +44,9 @@ export const userCardMockDataList = {
     card_id: "00004",
     is_locked: false,
     card: {
-      id: "00004",
-      name: "あめりか",
-      rarity: "epic",
+      id: "3179",
+      name: "主席",
+      rarity: "rare",
     },
   },
   [6]: {
@@ -55,9 +55,9 @@ export const userCardMockDataList = {
     card_id: "00005",
     is_locked: false,
     card: {
-      id: "00005",
-      name: "ホーム・アンド・アウェー",
-      rarity: "legendary",
+      id: "7670",
+      name: "ハットトリック",
+      rarity: "common",
     },
   },
 };
