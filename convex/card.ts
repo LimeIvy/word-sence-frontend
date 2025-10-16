@@ -57,29 +57,45 @@ export const getCardsByDetails = query({
     requests: v.array(
       v.object({
         rarity: v.string(),
-        index: v.float64(),
+        index: v.number(),
       })
     ),
   },
   handler: async (ctx, args) => {
+    console.log("getCardsByDetails - args:", args);
+
     if (args.requests.length === 0) {
+      console.log("getCardsByDetails - empty requests, returning []");
       return [];
     }
 
-    const cards = await ctx.db
-      .query("card")
-      .filter((q) =>
-        q.or(
-          ...args.requests.map((req) =>
-            q.and(
-              q.eq(q.field("rarity"), req.rarity),
-              q.eq(q.field("card_number"), req.index.toString())
-            )
-          )
-        )
-      )
-      .collect();
+    const allCards = [];
 
-    return cards;
+    // 各リクエストに対して個別にクエリを実行
+    for (const req of args.requests) {
+      try {
+        const card = await ctx.db
+          .query("card")
+          .withIndex("by_rarity_and_number", (q) =>
+            q.eq("rarity", req.rarity).eq("card_number", String(req.index))
+          )
+          .first();
+
+        if (card) {
+          allCards.push(card);
+          console.log(`getCardsByDetails - found card: ${card.card_number} (${card.rarity})`);
+        } else {
+          console.log(`getCardsByDetails - card not found: ${req.index} (${req.rarity})`);
+        }
+      } catch (error) {
+        console.error(
+          `getCardsByDetails - error querying card ${req.index} (${req.rarity}):`,
+          error
+        );
+      }
+    }
+
+    console.log("getCardsByDetails - individual queries completed, total cards:", allCards.length);
+    return allCards;
   },
 });
