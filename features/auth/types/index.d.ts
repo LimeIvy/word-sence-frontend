@@ -1,4 +1,4 @@
-import { type userPrivateMetadataSchema } from "@/lib/validations/auth";
+import { userPrivateMetadataSchema } from "@/lib/validations/auth";
 import { type HandleOAuthCallbackParams } from "@clerk/types";
 import { type z } from "zod";
 
