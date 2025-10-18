@@ -1,9 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-
 import {
   Card,
   CardContent,
@@ -12,15 +8,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useConvexAuth } from "convex/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { OAuthSignIn } from "../../../../features/auth/components/OauthSignin";
 import { SignInForm } from "../../../../features/auth/components/SigninForm";
 
 export default function SignInPage() {
   // 認証済みのユーザー情報を取得
-  const { user } = useUser();
+  const { isAuthenticated, isLoading } = useConvexAuth();
+
+  const router = useRouter();
+
+  // ローディング中は何も表示しない
+  if (isLoading) {
+    return null;
+  }
 
   // 認証済みの場合は、トップページにリダイレクト
-  if (user) redirect("/");
+  if (isAuthenticated) {
+    router.push("/");
+  }
 
   return (
     <Card className="shadow-lg border-0">

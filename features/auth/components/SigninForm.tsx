@@ -36,30 +36,32 @@ export function SignInForm() {
     },
   });
 
-  function HandleSubmit(data: Inputs) {
-    if (!isLoaded) return;
+  const HandleSubmit = React.useCallback(
+    (data: Inputs) => {
+      if (!isLoaded) return;
 
-    startTransition(async () => {
-      try {
-        const result = await signIn.create({
-          identifier: data.email,
-          password: data.password,
-        });
+      startTransition(async () => {
+        try {
+          const result = await signIn.create({
+            identifier: data.email,
+            password: data.password,
+          });
 
-        if (result.status === "complete") {
-          await setActive({ session: result.createdSessionId });
+          if (result.status === "complete") {
+            await setActive({ session: result.createdSessionId });
 
-          router.push(`${window.location.origin}/`);
-        } else {
-          /*Investigate why the login hasn't completed */
-          console.log(result);
+            router.push(`${window.location.origin}/`);
+          } else {
+            console.log(result);
+          }
+        } catch (err) {
+          console.error("申し訳ありませんが、何か問題が発生しました。再度お試しください。");
+          console.error(err);
         }
-      } catch (err) {
-        console.error("申し訳ありませんが、何か問題が発生しました。再度お試しください。");
-        console.error(err);
-      }
-    });
-  }
+      });
+    },
+    [isLoaded, signIn, setActive, router, startTransition]
+  );
 
   return (
     <Form {...form}>
@@ -98,6 +100,7 @@ export function SignInForm() {
           ログイン
           <span className="sr-only">ログイン</span>
         </Button>
+        <div id="clerk-captcha" className="hidden" />
       </form>
     </Form>
   );
