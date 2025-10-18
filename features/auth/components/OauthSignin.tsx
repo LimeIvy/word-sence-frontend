@@ -17,7 +17,7 @@ export function OAuthSignIn() {
   const [isLoading, setIsLoading] = React.useState<OAuthStrategy | null>(null);
   const { signIn, isLoaded: signInLoaded } = useSignIn();
 
-  const OAuthSignIn = React.useCallback(
+  const handleOAuthSignIn = React.useCallback(
     async (provider: OAuthStrategy) => {
       if (!signInLoaded) return null;
       try {
@@ -47,13 +47,13 @@ export function OAuthSignIn() {
             key={provider.strategy}
             variant="outline"
             className="w-full bg-background sm:w-auto"
-            onClick={() => void OAuthSignIn(provider.strategy)}
+            onClick={() => void handleOAuthSignIn(provider.strategy)}
             disabled={isLoading !== null}
           >
             {isLoading === provider.strategy ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
-              <FaGoogle className="h-2 w-2" />
+              <FaGoogle className="h-4 w-4" />
             )}
             {provider.name}
           </Button>

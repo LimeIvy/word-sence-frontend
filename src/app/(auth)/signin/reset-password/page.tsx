@@ -3,7 +3,7 @@ import { ResetPasswordForm } from "../../../../../features/auth/components/Reset
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center min-h-screen">
       <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl mb-2">パスワード再設定メールを送る</CardTitle>
