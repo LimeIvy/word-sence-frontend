@@ -15,6 +15,17 @@ export const authSchema = z.object({
     }),
 });
 
+export const signupSchema = z
+  .object({
+    email: authSchema.shape.email,
+    password: authSchema.shape.password,
+    confirmPassword: authSchema.shape.password,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "パスワードが一致しません。もう一度確認してください。",
+    path: ["confirmPassword"],
+  });
+
 export const verifyEmailSchema = z.object({
   code: z
     .string()
