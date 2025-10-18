@@ -52,10 +52,8 @@ export function SignInForm() {
 
             router.push(`${window.location.origin}/`);
           } else {
-            console.log(result);
           }
         } catch (err) {
-          console.error("申し訳ありませんが、何か問題が発生しました。再度お試しください。");
           console.error(err);
         }
       });
@@ -95,12 +93,11 @@ export function SignInForm() {
             </FormItem>
           )}
         />
-        <Button disabled={isPending}>
+        <Button disabled={isPending} className="mt-7">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
           ログイン
           <span className="sr-only">ログイン</span>
         </Button>
-        <div id="clerk-captcha" className="hidden" />
       </form>
     </Form>
   );

@@ -39,14 +39,13 @@ export function OAuthSignIn() {
 
   return (
     <div className="grid grid-cols-1 gap-1 sm:grid-cols-1 sm:gap-2">
-      <div id="clerk-captcha" className="hidden" />
       {oauthProviders.map((provider) => {
         return (
           <Button
             aria-label={`Sign in with ${provider.name}`}
             key={provider.strategy}
             variant="outline"
-            className="w-full bg-background sm:w-auto"
+            className="w-full bg-background sm:w-auto cursor-pointer"
             onClick={() => void handleOAuthSignIn(provider.strategy)}
             disabled={isLoading !== null}
           >
