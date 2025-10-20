@@ -103,7 +103,7 @@ export default defineSchema({
   // 対戦テーブル
   battle: defineTable({
     player_ids: v.array(v.id("user")), // 参加者リスト
-    game_status: v.string(), // "active", "finished"
+    game_status: v.union(v.literal("active"), v.literal("finished")), // ゲームの進行状況
     winner_ids: v.optional(v.array(v.id("user"))), // 勝者IDの配列
 
     current_round: v.int64(),
