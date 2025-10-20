@@ -12,15 +12,18 @@ const rarityUnion = v.union(
 const playerState = v.object({
   user_id: v.id("user"),
   score: v.int64(), // 現在のポイント (3点で勝利)
-  // リアルタイム手札状態 (5枚)
-  hand: v.array(v.id("card_master")),
-  // 使用デッキの参照
-  deck_ref: v.id("deck"),
-  // ターン内アクションログ (複雑なJSON構造を v.any() で許容)
-  turn_state: v.any(),
-  // 提出カード
-  submitted_id: v.optional(v.id("card_master")),
+  hand: v.array(v.id("card")), // リアルタイム手札状態 (5枚)
+  deck_ref: v.id("deck"), // 使用デッキの参照
+  turn_state: v.any(), // ターン内アクションログ
+  submitted_id: v.optional(v.id("card")),
 });
+
+const gamePhaseUnion = v.union(
+  v.literal("field_card_presentation"), // 場札提示フェーズ
+  v.literal("player_action"), // プレイヤーアクションフェーズ (交換/生成)
+  v.literal("word_submission"), // 単語提出フェーズ
+  v.literal("point_calculation") // ポイント計算フェーズ
+);
 
 export default defineSchema({
   // ユーザーテーブル
@@ -99,27 +102,20 @@ export default defineSchema({
 
   // 対戦テーブル
   battle: defineTable({
-    // 参加プレイヤーIDの配列
-    player_ids: v.array(v.id("user")),
+    player_ids: v.array(v.id("user")), // 参加者リスト
     game_status: v.string(), // "active", "finished"
-    // 勝者IDの配列（同点勝利を考慮）
-    winner_ids: v.optional(v.array(v.id("user"))),
+    winner_ids: v.optional(v.array(v.id("user"))), // 勝者IDの配列
 
     current_round: v.int64(),
 
-    // ラウンド情報
+    current_phase: gamePhaseUnion,
+
     field_card_id: v.id("card"),
-    field_card_text: v.string(),
 
-    // 各プレイヤーの状態を格納する配列 (2~5人に対応)
     players: v.array(playerState),
-
-    // ポイント計算結果
-    submission_data: v.optional(v.array(v.object({ userId: v.id("user"), score: v.int64() }))), // { userId1: score, userId2: score, ... }
-
-    last_action_time: v.number(), // タイムアウト判定用
+    submission_data: v.optional(v.array(v.object({ userId: v.id("user"), score: v.int64() }))),
+    last_action_time: v.number(),
   })
-    // 参加プレイヤーの検索用インデックス
     .index("by_player_id", ["player_ids"])
     .index("by_status", ["game_status"]),
 
