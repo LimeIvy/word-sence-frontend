@@ -1,26 +1,34 @@
 "use client";
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@clerk/nextjs";
 import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { OAuthSignIn } from "../../../../features/auth/components/OauthSignin";
 import { SignInForm } from "../../../../features/auth/components/SigninForm";
 
 export default function SignInPage() {
-  // 認証済みのユーザー情報を取得
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  // ClerkとConvexの両方の認証状態を取得
+  const { isSignedIn, isLoaded: clerkLoaded } = useAuth();
+  const { isAuthenticated, isLoading: convexLoading } = useConvexAuth();
 
   const router = useRouter();
+
+  // 両方の認証状態がロードされるまで待機
+  const isLoading = !clerkLoaded || convexLoading;
+
+  // どちらかが認証済みの場合は、トップページにリダイレクト
+  useEffect(() => {
+    if (!isLoading && (isSignedIn || isAuthenticated)) {
+      router.push("/");
+    }
+  }, [isSignedIn, isAuthenticated, isLoading, router]);
 
   // ローディング中は何も表示しない
   if (isLoading) {
     return null;
-  }
-
-  // 認証済みの場合は、トップページにリダイレクト
-  if (isAuthenticated) {
-    router.push("/");
   }
 
   return (

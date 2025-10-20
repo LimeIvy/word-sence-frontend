@@ -9,6 +9,7 @@
  */
 
 import type * as card from "../card.js";
+import type * as http from "../http.js";
 import type * as user from "../user.js";
 
 import type {
@@ -27,6 +28,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   card: typeof card;
+  http: typeof http;
   user: typeof user;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
