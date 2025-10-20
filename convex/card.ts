@@ -2,12 +2,20 @@ import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "./_generated/server";
 
+const rarityValidator = v.union(
+  v.literal("common"),
+  v.literal("rare"),
+  v.literal("super_rare"),
+  v.literal("epic"),
+  v.literal("legendary")
+);
+
 export const getLegendary = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db
       .query("card")
-      .filter((q) => q.eq(q.field("rarity"), "legendary"))
+      .withIndex("by_rarity", (q) => q.eq("rarity", "legendary"))
       .collect();
   },
 });
@@ -17,7 +25,7 @@ export const getEpic = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("card")
-      .filter((q) => q.eq(q.field("rarity"), "epic"))
+      .withIndex("by_rarity", (q) => q.eq("rarity", "epic"))
       .paginate(args.paginationOpts);
   },
 });
@@ -27,7 +35,7 @@ export const getSuperRare = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("card")
-      .filter((q) => q.eq(q.field("rarity"), "super_rare"))
+      .withIndex("by_rarity", (q) => q.eq("rarity", "super_rare"))
       .paginate(args.paginationOpts);
   },
 });
@@ -37,7 +45,7 @@ export const getRare = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("card")
-      .filter((q) => q.eq(q.field("rarity"), "rare"))
+      .withIndex("by_rarity", (q) => q.eq("rarity", "rare"))
       .paginate(args.paginationOpts);
   },
 });
@@ -47,7 +55,7 @@ export const getCommon = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("card")
-      .filter((q) => q.eq(q.field("rarity"), "common"))
+      .withIndex("by_rarity", (q) => q.eq("rarity", "common"))
       .paginate(args.paginationOpts);
   },
 });
@@ -56,7 +64,7 @@ export const getCardsByDetails = query({
   args: {
     requests: v.array(
       v.object({
-        rarity: v.string(),
+        rarity: rarityValidator,
         index: v.number(),
       })
     ),
