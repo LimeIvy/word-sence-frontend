@@ -6,11 +6,11 @@ import { getCurrentUser } from "./user";
 export const listCard = mutation({
   args: {
     cardId: v.id("card"),
-    price: v.float64(),
+    price: v.int64(),
   },
   handler: async (ctx, { cardId, price }) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("ユーザーが見つかりません");
 
     // ユーザーがそのカードを持っているかチェック
     const userCard = await ctx.db
@@ -19,7 +19,7 @@ export const listCard = mutation({
       .first();
 
     if (!userCard || userCard.quantity <= 0n) {
-      throw new Error("User does not own this card");
+      throw new Error("ユーザーはこのカードを所有していません");
     }
 
     // user_cardからカードを削除
@@ -36,7 +36,7 @@ export const listCard = mutation({
     await ctx.db.insert("market", {
       user_id: user._id,
       card_id: cardId,
-      price: BigInt(price),
+      price: price,
       status: "listed",
       created_at: now,
       updated_at: now,
@@ -262,7 +262,7 @@ export const getMySales = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("ユーザーが見つかりません");
 
     const sales = await ctx.db
       .query("sale_record")
