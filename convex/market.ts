@@ -12,6 +12,10 @@ export const listCard = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("ユーザーが見つかりません");
 
+    if (price <= 0) {
+      throw new Error("価格は正の値である必要があります");
+    }
+
     // ユーザーがそのカードを持っているかチェック
     const userCard = await ctx.db
       .query("user_card")
@@ -53,6 +57,10 @@ export const cancelListing = mutation({
 
     const listing = await ctx.db.get(marketId);
     if (!listing) throw new Error("出品が見つかりません");
+
+    if (listing.status !== "listed") {
+      throw new Error("この出品はキャンセルできません");
+    }
 
     // ユーザーの所有権を確認
     if (listing.user_id !== user._id) {
@@ -102,6 +110,10 @@ export const buyCard = mutation({
 
     if (listing.status !== "listed") {
       throw new Error("カードは購入できません");
+    }
+
+    if (listing.user_id === user._id) {
+      throw new Error("自分の出品は購入できません");
     }
 
     // 購入者のジェム残高をチェック
