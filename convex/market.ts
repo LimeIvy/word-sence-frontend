@@ -116,6 +116,12 @@ export const buyCard = mutation({
       throw new Error("自分の出品は購入できません");
     }
 
+    // 取引を実行
+    await ctx.db.patch(marketId, {
+      status: "sold",
+      updated_at: Date.now(),
+    });
+
     // 購入者のジェム残高をチェック
     const buyerProfile = await ctx.db
       .query("profiles")
@@ -123,6 +129,10 @@ export const buyCard = mutation({
       .first();
 
     if (!buyerProfile || buyerProfile.gem < listing.price) {
+      await ctx.db.patch(marketId, {
+        status: "listed",
+        updated_at: Date.now(),
+      });
       throw new Error("ジェムが不足しています");
     }
 
@@ -132,13 +142,13 @@ export const buyCard = mutation({
       .withIndex("by_user_id", (q) => q.eq("user_id", listing.user_id))
       .first();
 
-    if (!sellerProfile) throw new Error("売り手のプロフィールが見つかりません");
-
-    // 取引を実行
-    await ctx.db.patch(marketId, {
-      status: "sold",
-      updated_at: Date.now(),
-    });
+    if (!sellerProfile) {
+      await ctx.db.patch(marketId, {
+        status: "listed",
+        updated_at: Date.now(),
+      });
+      throw new Error("売り手のプロフィールが見つかりません");
+    }
 
     // 販売記録を作成
     await ctx.db.insert("sale_record", {
