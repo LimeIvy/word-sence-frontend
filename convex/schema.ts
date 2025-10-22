@@ -30,7 +30,7 @@ export default defineSchema({
   user: defineTable({
     clerk_id: v.string(),
     email: v.string(),
-  }),
+  }).index("by_clerk_id", ["clerk_id"]),
 
   // プロフィールテーブル
   profiles: defineTable({

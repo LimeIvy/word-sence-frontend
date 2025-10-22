@@ -40,6 +40,11 @@ export default function RootLayout({
       >
         <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          signInUrl="/signin"
+          signUpUrl="/signup"
+          afterSignInUrl="/"
+          afterSignUpUrl="/"
+          afterSignOutUrl="/signin"
           appearance={{
             elements: {
               captcha: {
