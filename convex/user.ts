@@ -2,10 +2,47 @@ import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
 import { internalMutation, query, QueryCtx } from "./_generated/server";
 
-export const current = query({
+// 現在のユーザを取得する
+export const getMyUser = query({
   args: {},
   handler: async (ctx) => {
     return await getCurrentUser(ctx);
+  },
+});
+
+// 現在のユーザを取得する(プロフィールも取得)
+export const getMyUserWithProfile = query({
+  args: {},
+  handler: async (ctx) => {
+    return await getCurrentUserWithProfile(ctx);
+  },
+});
+
+// 現在のユーザのプロフィールを更新
+export const updateMyProfile = internalMutation({
+  args: { name: v.string(), icon: v.string(), gem: v.number() },
+  handler: async (ctx, { name, icon, gem }) => {
+    const user = await getCurrentUserWithProfile(ctx);
+    if (user.profile === null) {
+      throw new Error("Profile not found");
+    }
+    await ctx.db.patch(user.profile._id, {
+      name: name,
+      icon: icon,
+      gem: BigInt(gem),
+    });
+  },
+});
+
+// ユーザを取得する
+export const getUser = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, { clerkId }) => {
+    const user = await userByClerkId(ctx, clerkId);
+    if (user === null) {
+      throw new Error("User not found");
+    }
+    return user;
   },
 });
 
@@ -46,13 +83,6 @@ export const deleteFromClerk = internalMutation({
   },
 });
 
-// 現在のユーザを取得する(エラーを投げる)
-export async function getCurrentUserOrThrow(ctx: QueryCtx) {
-  const userRecord = await getCurrentUser(ctx);
-  if (!userRecord) throw new Error("Can't get current user");
-  return userRecord;
-}
-
 // 現在のユーザを取得する(nullを返す)
 export async function getCurrentUser(ctx: QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
@@ -60,6 +90,25 @@ export async function getCurrentUser(ctx: QueryCtx) {
     return null;
   }
   return await userByClerkId(ctx, identity.subject);
+}
+
+// 現在のユーザを取得する(プロフィールも取得)
+export async function getCurrentUserWithProfile(ctx: QueryCtx) {
+  const user = await getCurrentUser(ctx);
+  if (user === null) {
+    throw new Error("User not found");
+  }
+  const profile = await ctx.db
+    .query("profiles")
+    .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
+    .first();
+  if (profile === null) {
+    throw new Error("Profile not found");
+  }
+  return {
+    user: user._id,
+    profile: profile,
+  };
 }
 
 // Clerk IDを使ってユーザを取得する
