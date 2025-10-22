@@ -79,7 +79,7 @@ export default defineSchema({
   market: defineTable({
     user_id: v.id("user"), // 出品者
     card_id: v.id("card"),
-    price: v.float64(),
+    price: v.int64(),
     status: v.union(v.literal("listed"), v.literal("sold"), v.literal("canceled")),
     created_at: v.number(),
     updated_at: v.number(),
@@ -93,7 +93,7 @@ export default defineSchema({
     buyer_id: v.id("user"),
     seller_id: v.id("user"),
     market_id: v.id("market"),
-    price: v.float64(),
+    price: v.int64(),
     created_at: v.number(),
   })
     .index("by_buyer_id", ["buyer_id"])

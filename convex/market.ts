@@ -36,7 +36,7 @@ export const listCard = mutation({
     await ctx.db.insert("market", {
       user_id: user._id,
       card_id: cardId,
-      price: price,
+      price: BigInt(price),
       status: "listed",
       created_at: now,
       updated_at: now,
@@ -49,13 +49,15 @@ export const cancelListing = mutation({
   args: { marketId: v.id("market") },
   handler: async (ctx, { marketId }) => {
     const user = await getCurrentUser(ctx);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error("ユーザーが見つかりません");
 
-    const listing = await ctx.db
-      .query("market")
-      .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
-      .first();
-    if (!listing) throw new Error("Listing not found");
+    const listing = await ctx.db.get(marketId);
+    if (!listing) throw new Error("出品が見つかりません");
+
+    // ユーザーの所有権を確認
+    if (listing.user_id !== user._id) {
+      throw new Error("このリスティングをキャンセルする権限がありません");
+    }
 
     // 出品を取り下げる
     await ctx.db.patch(marketId, {
@@ -108,7 +110,7 @@ export const buyCard = mutation({
       .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
       .first();
 
-    if (!buyerProfile || buyerProfile.gem < BigInt(Math.floor(listing.price))) {
+    if (!buyerProfile || buyerProfile.gem < listing.price) {
       throw new Error("ジェムが不足しています");
     }
 
@@ -137,7 +139,7 @@ export const buyCard = mutation({
 
     // 購入者のジェムを減らし、カードを追加
     await ctx.db.patch(buyerProfile._id, {
-      gem: buyerProfile.gem - BigInt(Math.floor(listing.price)),
+      gem: buyerProfile.gem - listing.price,
     });
 
     // 購入者のカード所持数を更新
@@ -162,7 +164,7 @@ export const buyCard = mutation({
     }
 
     await ctx.db.patch(sellerProfile._id, {
-      gem: sellerProfile.gem + BigInt(Math.floor(listing.price)),
+      gem: sellerProfile.gem + listing.price,
     });
 
     return { success: true, price: listing.price };
