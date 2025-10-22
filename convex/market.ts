@@ -208,6 +208,7 @@ export const getMarketListings = query({
     const listingsWithDetails = await Promise.all(
       listings.map(async (listing) => {
         const card = await ctx.db.get(listing.card_id);
+        if (!card) return null;
         const seller = await ctx.db.get(listing.user_id);
         const sellerProfile = await ctx.db
           .query("profiles")
@@ -222,7 +223,7 @@ export const getMarketListings = query({
       })
     );
 
-    return listingsWithDetails;
+    return listingsWithDetails.filter((listing) => listing !== null);
   },
 });
 
