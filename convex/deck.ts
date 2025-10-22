@@ -49,7 +49,7 @@ export const deleteDeck = mutation({
   },
 });
 
-// デッキのカードを更新する
+// デッキのカードを保存する
 export const saveDeckCards = mutation({
   args: {
     deckId: v.id("deck"),
@@ -60,23 +60,26 @@ export const saveDeckCards = mutation({
       })
     ),
   },
-  handler: async (ctx, args) => {
-    for (const card of args.cards) {
-      const deckCard = await ctx.db
-        .query("deck_card")
-        .withIndex("by_deck_and_card", (q) =>
-          q.eq("deck_id", args.deckId).eq("card_id", card.card_id)
-        )
-        .unique();
-      if (deckCard) {
-        await ctx.db.patch(deckCard._id, { position: card.position });
-      } else {
-        await ctx.db.insert("deck_card", {
-          deck_id: args.deckId,
-          card_id: card.card_id,
-          position: card.position,
-        });
-      }
+  handler: async (ctx, { deckId, cards }) => {
+    // 既存のデッキカードをすべて削除
+    const existingCards = await ctx.db
+      .query("deck_card")
+      .withIndex("by_deck_id", (q) => q.eq("deck_id", deckId))
+      .collect();
+
+    for (const existingCard of existingCards) {
+      await ctx.db.delete(existingCard._id);
     }
+
+    // 新しいカードを一括挿入
+    for (const card of cards) {
+      await ctx.db.insert("deck_card", {
+        deck_id: deckId,
+        card_id: card.card_id,
+        position: card.position,
+      });
+    }
+
+    return { success: true, cardCount: cards.length };
   },
 });
