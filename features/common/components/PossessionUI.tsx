@@ -1,7 +1,14 @@
+"use client";
+import { useQuery } from "convex/react";
 import { CirclePoundSterling } from "lucide-react";
 import Image from "next/image";
+import { api } from "../../../convex/_generated/api";
 
 export const PossessionUI = () => {
+  const myUser = useQuery(api.user.getMyUserWithProfile);
+  if (!myUser) return null;
+  const { profile } = myUser;
+  const gem = profile.gem.toString();
   return (
     <div className="flex items-center justify-center gap-2">
       <div className="flex items-center justify-center gap-2 rounded-xl p-3 border border-primary/30 bg-white/90 shadow-sm">
@@ -11,7 +18,7 @@ export const PossessionUI = () => {
 
       <div className="flex items-center justify-center gap-2 rounded-xl p-3 border border-primary/30 bg-white/90 shadow-sm">
         <CirclePoundSterling className="size-8" />
-        <span className="text-2xl font-bold">100</span>
+        <span className="text-2xl font-bold">{gem}</span>
       </div>
     </div>
   );

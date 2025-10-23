@@ -1,6 +1,14 @@
+export enum RarityEnum {
+  Common = "common",
+  Rare = "rare",
+  SuperRare = "super_rare",
+  Epic = "epic",
+  Legendary = "legendary",
+}
+
 export interface GachaCard {
   text: string;
-  rarity: string;
+  rarity: RarityEnum;
   card_number: string;
 }
 

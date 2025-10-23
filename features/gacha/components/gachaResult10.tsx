@@ -5,17 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { WordCard } from "../../common/components/wordCard";
 import { mapRarityToJapanese } from "../../deck/utils/rarity-utils";
+import type { GachaResultType } from "../types/gacha-state";
 
-interface GachaResult10Props {
-  result: {
-    requests: {
-      rarity: string;
-      index: number;
-    }[];
-  } | null;
-}
-
-export const GachaResult10 = ({ result }: GachaResult10Props) => {
+export const GachaResult10 = ({ result }: { result: GachaResultType }) => {
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
@@ -26,10 +18,10 @@ export const GachaResult10 = ({ result }: GachaResult10Props) => {
   }, [result]);
 
   const requests = useMemo(() => {
-    return result?.requests.map((r) => ({ rarity: r.rarity, index: r.index })) ?? [];
+    return result?.requests.map((r) => ({ rarity: r.rarity, cardNumber: r.cardNumber })) ?? [];
   }, [result?.requests]);
 
-  const cards = useQuery(api.card.getCardsByDetails, { requests });
+  const cards = useQuery(api.card.getCardsByDetails, requests.length > 0 ? { requests } : "skip");
 
   if (!result) return null;
 
