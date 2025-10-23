@@ -34,9 +34,18 @@ export function GachaController() {
         cardNumber: r.cardNumber,
       }));
 
-      for (const request of requests) {
-        await addUserCardMutation({ cardNumber: request.cardNumber });
+      try {
+        // 並列実行で高速化
+        await Promise.all(
+          requests.map((request) => addUserCardMutation({ cardNumber: request.cardNumber }))
+        );
+      } catch (error) {
+        // カード追加に失敗した場合、ジェムを戻す
+        await spendGemsMutation({ amount: 100 });
+        setGachaState("idle");
+        throw error;
       }
+
       setGachaResult({ requests });
       setGachaState("result");
     }, 1200);

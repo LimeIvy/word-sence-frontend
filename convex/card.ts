@@ -143,12 +143,28 @@ export const addUserCard = mutation({
         acquired_at: Date.now(),
       });
     } else {
-      await ctx.db.insert("user_card", {
-        user_id: user._id,
-        card_id: card._id,
-        quantity: 1n,
-        acquired_at: Date.now(),
-      });
+      try {
+        await ctx.db.insert("user_card", {
+          user_id: user._id,
+          card_id: card._id,
+          quantity: 1n,
+          acquired_at: Date.now(),
+        });
+      } catch (error) {
+        // 並行挿入の競合が発生した場合、再度クエリして更新
+        const existingCard = await ctx.db
+          .query("user_card")
+          .withIndex("by_user_and_card", (q) => q.eq("user_id", user._id).eq("card_id", card._id))
+          .first();
+        if (existingCard) {
+          await ctx.db.patch(existingCard._id, {
+            quantity: existingCard.quantity + 1n,
+            acquired_at: Date.now(),
+          });
+        } else {
+          throw error;
+        }
+      }
     }
     return { success: true };
   },
