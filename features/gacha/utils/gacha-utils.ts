@@ -46,12 +46,12 @@ export function pickIndexInRarity(rarity: RarityConfig, rand = Math.random()): n
 // ガチャ1回分のインデックスを返す
 export type GachaRoll = {
   rarity: "common" | "rare" | "super_rare" | "epic" | "legendary";
-  cardIndex: number;
+  cardNumber: string;
 };
 
 export function rollGacha(): GachaRoll {
   const rarity = pickRarity();
-  const cardIndex = pickIndexInRarity(rarity);
+  const cardNumber = pickIndexInRarity(rarity);
   const queryNameToKey: Record<string, GachaRoll["rarity"]> = {
     getLegendary: "legendary",
     getEpic: "epic",
@@ -59,7 +59,10 @@ export function rollGacha(): GachaRoll {
     getRare: "rare",
     getCommon: "common",
   };
-  return { rarity: queryNameToKey[rarity.queryName] ?? "common", cardIndex };
+  return {
+    rarity: queryNameToKey[rarity.queryName] ?? "common",
+    cardNumber: cardNumber.toString(),
+  };
 }
 
 // ガチャ10回分のインデックスを返す

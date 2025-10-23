@@ -1,8 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useMutation } from "convex/react";
 import { Home, RotateCcw, Star } from "lucide-react";
 import { useState } from "react";
+import { api } from "../../../convex/_generated/api";
+import { RarityEnum } from "../types/gacha";
 import { GachaResultType, GachaState } from "../types/gacha-state";
 import { rollGacha10, type GachaRoll } from "../utils/gacha-utils";
 import { DischargeCard } from "./dischargeCard";
@@ -11,22 +14,41 @@ import { GachaResult10 } from "./gachaResult10";
 export function GachaController() {
   const [gachaState, setGachaState] = useState<GachaState>("idle");
   const [gachaResult, setGachaResult] = useState<GachaResultType>(null);
+  const addUserCardMutation = useMutation(api.card.addUserCard);
+  const spendGemsMutation = useMutation(api.user.spendGems);
 
   const handleGachaRoll = async () => {
+    try {
+      // gemを100消費
+      await spendGemsMutation({ amount: 100 });
+    } catch (error) {
+      setGachaState("idle");
+      throw error;
+    }
     setGachaState("rolling");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const tenRolls: GachaRoll[] = rollGacha10();
-      const requests = tenRolls.map((r) => ({ rarity: r.rarity, index: r.cardIndex }));
-      const result = { requests };
-      setGachaResult(result);
+      const requests = tenRolls.map((r) => ({
+        rarity: r.rarity as RarityEnum,
+        cardNumber: r.cardNumber,
+      }));
+
+      try {
+        // 並列実行で高速化
+        await Promise.all(
+          requests.map((request) => addUserCardMutation({ cardNumber: request.cardNumber }))
+        );
+      } catch (error) {
+        // カード追加に失敗した場合、ジェムを戻す
+        await spendGemsMutation({ amount: 100 });
+        setGachaState("idle");
+        throw error;
+      }
+
+      setGachaResult({ requests });
       setGachaState("result");
     }, 1200);
-  };
-
-  const handleReset = () => {
-    setGachaState("idle");
-    setGachaResult(null);
   };
 
   switch (gachaState) {
@@ -65,7 +87,7 @@ export function GachaController() {
               <span>もう一度10連</span>
             </Button>
             <Button
-              onClick={handleReset}
+              onClick={() => setGachaState("idle")}
               variant="outline"
               className="text-xl font-bold px-8 py-6 rounded-full"
             >
