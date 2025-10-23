@@ -15,8 +15,16 @@ export function GachaController() {
   const [gachaState, setGachaState] = useState<GachaState>("idle");
   const [gachaResult, setGachaResult] = useState<GachaResultType>(null);
   const addUserCardMutation = useMutation(api.card.addUserCard);
+  const spendGemsMutation = useMutation(api.user.spendGems);
 
   const handleGachaRoll = async () => {
+    try {
+      // gemを100消費
+      await spendGemsMutation({ amount: 100 });
+    } catch {
+      setGachaState("idle");
+      throw new Error("ジェムが不足しています");
+    }
     setGachaState("rolling");
 
     setTimeout(async () => {
