@@ -43,17 +43,21 @@ export const spendGems = mutation({
       throw new Error("プロフィールが見つかりません");
     }
 
-    const currentGem = Number(user.profile.gem);
-    if (currentGem < amount) {
+    const amountBigInt = BigInt(amount);
+
+    const currentGem = user.profile.gem;
+
+    if (currentGem < amountBigInt) {
       throw new Error("ジェムが不足しています");
     }
 
-    const newGemAmount = currentGem - amount;
+    const newGemAmount = currentGem - amountBigInt;
+
     await ctx.db.patch(user.profile._id, {
-      gem: BigInt(newGemAmount),
+      gem: newGemAmount,
     });
 
-    return { newGemAmount };
+    return { newGemAmount: Number(newGemAmount) };
   },
 });
 
