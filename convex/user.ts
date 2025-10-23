@@ -1,6 +1,6 @@
 import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
-import { internalMutation, query, QueryCtx } from "./_generated/server";
+import { internalMutation, mutation, query, QueryCtx } from "./_generated/server";
 
 // 現在のユーザを取得する
 export const getMyUser = query({
@@ -31,6 +31,29 @@ export const updateMyProfile = internalMutation({
       icon: icon,
       gem: BigInt(gem),
     });
+  },
+});
+
+// gemを減らす
+export const spendGems = mutation({
+  args: { amount: v.number() },
+  handler: async (ctx, { amount }) => {
+    const user = await getCurrentUserWithProfile(ctx);
+    if (user.profile === null) {
+      throw new Error("プロフィールが見つかりません");
+    }
+
+    const currentGem = Number(user.profile.gem);
+    if (currentGem < amount) {
+      throw new Error("ジェムが不足しています");
+    }
+
+    const newGemAmount = currentGem - amount;
+    await ctx.db.patch(user.profile._id, {
+      gem: BigInt(newGemAmount),
+    });
+
+    return { newGemAmount };
   },
 });
 
