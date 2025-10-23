@@ -7,10 +7,10 @@ import { api } from "../../../convex/_generated/api";
 export const PossessionUI = () => {
   const myUser = useQuery(api.user.getMyUserWithProfile);
   const myCards = useQuery(api.card.getUserCards);
-  if (!myUser) return null;
+  if (!myUser || !myCards) return null;
   const { profile } = myUser;
   const gem = profile.gem.toString();
-  const cardCount = myCards?.length;
+  const cardCount = myCards.length;
   return (
     <div className="flex items-center justify-center gap-2">
       <div className="flex items-center justify-center gap-2 rounded-xl p-3 border border-primary/30 bg-white/90 shadow-sm">

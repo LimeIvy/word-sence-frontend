@@ -21,9 +21,9 @@ export function GachaController() {
     try {
       // gemを100消費
       await spendGemsMutation({ amount: 100 });
-    } catch {
+    } catch (error) {
       setGachaState("idle");
-      throw new Error("ジェムが不足しています");
+      throw error;
     }
     setGachaState("rolling");
 
