@@ -105,6 +105,15 @@ export const updateDeck = mutation({
 export const deleteDeck = mutation({
   args: { deckId: v.id("deck") },
   handler: async (ctx, { deckId }) => {
+    const deckCards = await ctx.db
+      .query("deck_card")
+      .withIndex("by_deck_id", (q) => q.eq("deck_id", deckId))
+      .collect();
+
+    for (const deckCard of deckCards) {
+      await ctx.db.delete(deckCard._id);
+    }
+
     return await ctx.db.delete(deckId);
   },
 });
