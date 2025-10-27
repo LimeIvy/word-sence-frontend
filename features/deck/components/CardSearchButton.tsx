@@ -2,7 +2,6 @@
 
 import { SearchIcon, X } from "lucide-react";
 import { useState } from "react";
-import { userCardMockDataList } from "../mock/userMockData";
 import { OwnedCardWithDetail } from "../types/deck";
 import { mapRarityToJapanese } from "../utils/rarity-utils";
 import { CardItem } from "./CardItem";
@@ -11,7 +10,8 @@ interface CardSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectCard: (card: OwnedCardWithDetail) => void;
-  excludeCardIds: number[];
+  excludeCardIds: string[];
+  ownedCards: OwnedCardWithDetail[];
 }
 
 const CardSearchModal = ({
@@ -19,6 +19,7 @@ const CardSearchModal = ({
   onClose,
   onSelectCard,
   excludeCardIds,
+  ownedCards,
 }: CardSearchModalProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRarities, setSelectedRarities] = useState<string[]>([]);
@@ -26,8 +27,7 @@ const CardSearchModal = ({
   if (!isOpen) return null;
 
   // 検索対象のカードをフィルタリング
-  const allCards = Object.values(userCardMockDataList);
-  const filteredCards = allCards.filter((card) => {
+  const filteredCards = ownedCards.filter((card) => {
     const matchesSearch = card.card.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRarity =
       selectedRarities.length === 0 || selectedRarities.includes(card.card.rarity);
@@ -113,11 +113,16 @@ const CardSearchModal = ({
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
-              {filteredCards.map((card) => (
-                <div key={card.id} onClick={() => onSelectCard(card)}>
-                  <CardItem ownedCard={card} />
-                </div>
-              ))}
+              {filteredCards.map((card, index) => {
+                // 有効なキーを生成（card.idがNaNや無効な値の場合はindexを使用）
+                const validKey =
+                  card.id && !isNaN(Number(card.id)) ? `${card.id}-${index}` : `card-${index}`;
+                return (
+                  <div key={validKey} onClick={() => onSelectCard(card)}>
+                    <CardItem ownedCard={card} />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -136,9 +141,11 @@ const CardSearchModal = ({
 export const CardSearchButton = ({
   onSelectCard,
   excludeCardIds = [],
+  ownedCards,
 }: {
   onSelectCard: (card: OwnedCardWithDetail) => void;
-  excludeCardIds?: number[];
+  excludeCardIds?: string[];
+  ownedCards: OwnedCardWithDetail[];
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -157,6 +164,7 @@ export const CardSearchButton = ({
         onClose={() => setIsModalOpen(false)}
         onSelectCard={onSelectCard}
         excludeCardIds={excludeCardIds}
+        ownedCards={ownedCards}
       />
     </>
   );

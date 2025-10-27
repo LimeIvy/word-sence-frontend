@@ -9,8 +9,15 @@ export function CardComponent({
   ownedCard: OwnedCardWithDetail;
   onClick?: () => void;
 }) {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <div onClick={onClick} className="cursor-pointer">
+    <div onClick={handleClick} className="cursor-pointer" style={{ userSelect: "none" }}>
       <CardItem ownedCard={ownedCard} />
     </div>
   );

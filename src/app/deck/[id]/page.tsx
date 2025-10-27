@@ -1,11 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { CreateNewDeckModal } from "../../../features/deck/components/CreateNewDeckModal";
-import { DeckList } from "../../../features/deck/components/DeckList";
+import BuildDeck from "../../../../features/deck/components/BuildDeck";
 
-export default function Deck() {
+export default function DeckEdit() {
   return (
-    <div className="h-screen">
+    <div className="flex flex-col h-screen">
       <header className="h-[10vh] flex items-center justify-start mt-5 ml-10 mb-6">
         <Link
           href="/"
@@ -14,11 +13,9 @@ export default function Deck() {
           <ArrowLeft className="size-10" />
         </Link>
       </header>
-      <main className="flex flex-col">
-        <CreateNewDeckModal />
-        <div>
-          <DeckList />
-        </div>
+      <main className="h-[90vh]">
+        {/* デッキ編成 */}
+        <BuildDeck />
       </main>
     </div>
   );
