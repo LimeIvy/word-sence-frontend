@@ -85,7 +85,7 @@ export function SellCardModal() {
                   if (!userCard) return null;
                   return (
                     <div
-                      key={userCard.id}
+                      key={userCard.card_id}
                       onClick={() => setSelectedCardId(userCard.card_id)}
                       className={`cursor-pointer transition-all ${
                         selectedCardId === userCard.card_id
