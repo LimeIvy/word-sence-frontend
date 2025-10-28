@@ -10,7 +10,8 @@ export function CardItem({ ownedCard }: { ownedCard: OwnedCardWithDetail }) {
     <WordCard
       className="aspect-3/4 w-20 sm:w-24 md:w-30 lg:w-36 transition-transform duration-300 hover:scale-110"
       rarity={japaneseRarity}
-      cardId={ownedCard.card.id}
+      cardId={ownedCard.card.card_number}
+      quantity={ownedCard.quantity}
     >
       {ownedCard.card.name}
     </WordCard>

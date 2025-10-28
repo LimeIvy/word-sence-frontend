@@ -7,6 +7,7 @@ export interface WordCardProps extends HTMLAttributes<HTMLDivElement> {
   className?: string;
   rarity?: CardRarity;
   cardId?: string | number;
+  quantity?: number;
 }
 
 export const WordCard = ({
@@ -14,6 +15,7 @@ export const WordCard = ({
   className = "",
   rarity = "並",
   cardId,
+  quantity,
   ...props
 }: WordCardProps) => {
   const showVertical = true;
@@ -257,6 +259,25 @@ export const WordCard = ({
               ))}
             </div>
           </div>
+
+          {/* 枚数表示 */}
+          {quantity && quantity > 1 && (
+            <div
+              className="absolute top-1 left-1 flex items-center justify-center font-black w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12"
+              style={{
+                background: "rgba(0,0,0,0.7)",
+                borderRadius: "50%",
+                border: "2px solid white",
+              }}
+            >
+              <span
+                className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-bold"
+                style={{ textShadow }}
+              >
+                {quantity}
+              </span>
+            </div>
+          )}
 
           {/* レアリティ印章 */}
           <div

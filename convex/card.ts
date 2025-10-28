@@ -118,6 +118,43 @@ export const getUserCards = query({
   },
 });
 
+//ユーザの所持カードを詳細情報付きで取得する
+export const getUserCardsWithDetails = query({
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const userCards = await ctx.db
+      .query("user_card")
+      .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
+      .collect();
+
+    // カードの詳細情報を取得
+    const cardsWithDetails = await Promise.all(
+      userCards.map(async (userCard) => {
+        const card = await ctx.db.get(userCard.card_id);
+        if (!card) {
+          return null;
+        }
+
+        return {
+          id: userCard._id,
+          user_id: userCard.user_id,
+          card_id: userCard.card_id,
+          quantity: userCard.quantity,
+          acquired_at: userCard.acquired_at,
+          is_locked: false, // デフォルト値
+          card: card,
+        };
+      })
+    );
+
+    return cardsWithDetails.filter(Boolean);
+  },
+});
+
 // ユーザの所持カードを追加する
 export const addUserCard = mutation({
   args: { cardNumber: v.string() },

@@ -16,6 +16,66 @@ export const getUserDecks = query({
   },
 });
 
+// ユーザの指定したデッキを取得する
+export const getUserDeck = query({
+  args: { userId: v.id("user"), deckId: v.id("deck") },
+  handler: async (ctx, { userId, deckId }) => {
+    return await ctx.db
+      .query("deck")
+      .withIndex("by_user_id", (q) => q.eq("user_id", userId))
+      .filter((q) => q.eq(q.field("_id"), deckId))
+      .unique();
+  },
+});
+
+// ユーザの指定したデッキのカードを取得する
+export const getUserDeckCards = query({
+  args: { userId: v.id("user"), deckId: v.id("deck") },
+  handler: async (ctx, { userId, deckId }) => {
+    // デッキの存在確認
+    const deck = await ctx.db
+      .query("deck")
+      .withIndex("by_user_id", (q) => q.eq("user_id", userId))
+      .filter((q) => q.eq(q.field("_id"), deckId))
+      .unique();
+
+    if (!deck) {
+      return [];
+    }
+
+    // デッキのカードを取得
+    const deckCards = await ctx.db
+      .query("deck_card")
+      .withIndex("by_deck_id", (q) => q.eq("deck_id", deckId))
+      .collect();
+
+    // カードの詳細情報を取得
+    const cardsWithDetails = await Promise.all(
+      deckCards.map(async (deckCard) => {
+        const card = await ctx.db.get(deckCard.card_id);
+        const userCard = await ctx.db
+          .query("user_card")
+          .withIndex("by_user_and_card", (q) =>
+            q.eq("user_id", userId).eq("card_id", deckCard.card_id)
+          )
+          .first();
+
+        if (!card || !userCard) {
+          return null;
+        }
+
+        return {
+          position: deckCard.position,
+          user_card_id: userCard._id,
+          card: card,
+        };
+      })
+    );
+
+    return cardsWithDetails.filter(Boolean);
+  },
+});
+
 // デッキを作成する
 export const createDeck = mutation({
   args: { name: v.string() },
@@ -45,6 +105,15 @@ export const updateDeck = mutation({
 export const deleteDeck = mutation({
   args: { deckId: v.id("deck") },
   handler: async (ctx, { deckId }) => {
+    const deckCards = await ctx.db
+      .query("deck_card")
+      .withIndex("by_deck_id", (q) => q.eq("deck_id", deckId))
+      .collect();
+
+    for (const deckCard of deckCards) {
+      await ctx.db.delete(deckCard._id);
+    }
+
     return await ctx.db.delete(deckId);
   },
 });
