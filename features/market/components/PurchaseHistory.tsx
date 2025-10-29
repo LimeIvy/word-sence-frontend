@@ -49,8 +49,8 @@ export function PurchaseHistory() {
                 <span>{purchase.price.toString()}</span>
               </div>
 
-              {purchase.seller && (
-                <div className="text-xs text-gray-600">売主: {purchase.seller.email}</div>
+              {purchase.seller?.profile && (
+                <div className="text-xs text-gray-600">売主: {purchase.seller.profile.name}</div>
               )}
 
               <div className="text-xs text-gray-500">

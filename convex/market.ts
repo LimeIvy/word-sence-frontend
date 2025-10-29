@@ -267,11 +267,17 @@ export const getMyPurchases = query({
         const market = await ctx.db.get(purchase.market_id);
         const card = market ? await ctx.db.get(market.card_id) : null;
         const seller = market ? await ctx.db.get(market.user_id) : null;
+        const sellerProfile = seller
+          ? await ctx.db
+              .query("profiles")
+              .withIndex("by_user_id", (q) => q.eq("user_id", seller._id))
+              .first()
+          : null;
 
         return {
           ...purchase,
           card,
-          seller,
+          seller: seller ? { ...seller, profile: sellerProfile } : null,
         };
       })
     );
@@ -297,11 +303,17 @@ export const getMySales = query({
         const market = await ctx.db.get(sale.market_id);
         const card = market ? await ctx.db.get(market.card_id) : null;
         const buyer = await ctx.db.get(sale.buyer_id);
+        const buyerProfile = buyer
+          ? await ctx.db
+              .query("profiles")
+              .withIndex("by_user_id", (q) => q.eq("user_id", buyer._id))
+              .first()
+          : null;
 
         return {
           ...sale,
           card,
-          buyer,
+          buyer: buyer ? { ...buyer, profile: buyerProfile } : null,
         };
       })
     );
