@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Gem, ShoppingCart } from "lucide-react";
+import { Id } from "../../../convex/_generated/dataModel";
 import { WordCard } from "../../common/components/wordCard";
 import { mapRarityToJapanese } from "../../deck/utils/rarity-utils";
 import { MarketListingWithDetails } from "../types/market";
@@ -10,7 +11,7 @@ interface MarketCardProps {
   listing: MarketListingWithDetails;
   onBuy: (marketId: string) => void;
   isLoading?: boolean;
-  currentUserId?: string;
+  currentUserId?: Id<"user">;
 }
 
 export function MarketCard({ listing, onBuy, isLoading, currentUserId }: MarketCardProps) {
