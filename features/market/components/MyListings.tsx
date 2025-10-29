@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -10,13 +11,17 @@ import { MyListingCard } from "./MyListingCard";
 export function MyListings() {
   const myListings = useQuery(api.market.getMyListings);
   const cancelListing = useMutation(api.market.cancelListing);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const handleCancel = async (marketId: string) => {
+    setCancelingId(marketId);
     try {
       await cancelListing({ marketId: marketId as Id<"market"> });
       toast.success("出品を取り下げました");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "取り下げに失敗しました");
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -37,7 +42,12 @@ export function MyListings() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
       {myListings.map((listing) => (
-        <MyListingCard key={listing._id} listing={listing} onCancel={handleCancel} />
+        <MyListingCard
+          key={listing._id}
+          listing={listing}
+          onCancel={handleCancel}
+          isLoading={cancelingId === listing._id}
+        />
       ))}
     </div>
   );
