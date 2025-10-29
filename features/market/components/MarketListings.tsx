@@ -12,9 +12,9 @@ export function MarketListings() {
   const buyCard = useMutation(api.market.buyCard);
   const currentUser = useQuery(api.user.getMyUser);
 
-  const handleBuy = async (marketId: string) => {
+  const handleBuy = async (marketId: Id<"market">) => {
     try {
-      await buyCard({ marketId: marketId as Id<"market"> });
+      await buyCard({ marketId });
       toast.success("カードを購入しました！");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "購入に失敗しました");

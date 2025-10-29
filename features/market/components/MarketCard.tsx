@@ -9,7 +9,7 @@ import { MarketListingWithDetails } from "../types/market";
 
 interface MarketCardProps {
   listing: MarketListingWithDetails;
-  onBuy: (marketId: string) => void;
+  onBuy: (marketId: Id<"market">) => void;
   isLoading?: boolean;
   currentUserId?: Id<"user">;
 }
