@@ -49,7 +49,7 @@ async function getCardOrThrow(
 ): Promise<Doc<"card">> {
   const card = await ctx.db.get(cardId);
   if (!card) {
-    throw new Error(`Card not found: ${cardId}`);
+    throw new Error(`カードが見つかりません: ${cardId}`);
   }
   return card;
 }
@@ -71,7 +71,7 @@ async function calculateSimilarityScore(
 ): Promise<number> {
   const API_BASE_URL = process.env.WORD_SENCE_API_URL;
   if (!API_BASE_URL) {
-    throw new Error("WORD_SENCE_API_URL is not set");
+    throw new Error("環境変数 WORD_SENCE_API_URL が設定されていません");
   }
 
   try {
@@ -299,7 +299,7 @@ export const getBattle = query({
   handler: async (ctx, { battleId }) => {
     const battle = await ctx.db.get(battleId);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
     return battle;
   },
@@ -331,10 +331,10 @@ export const createBattle = mutation({
   handler: async (ctx, { player_ids, deck_ids }) => {
     // 入力検証
     if (player_ids.length !== deck_ids.length) {
-      throw new Error("Player IDs and Deck IDs must have the same length");
+      throw new Error("プレイヤーIDとデッキIDの長さが一致しません");
     }
     if (player_ids.length < 2 || player_ids.length > 5) {
-      throw new Error("Battle requires 2-5 players");
+      throw new Error("バトルには2-5人のプレイヤーが必要です");
     }
 
     // お題カードをランダムに選択
@@ -345,6 +345,11 @@ export const createBattle = mutation({
       player_ids.map(async (userId, index) => {
         const deckId = deck_ids[index];
         const deckCards = await getDeckCards(ctx, deckId);
+
+        // デッキサイズの検証
+        if (deckCards.length < 5) {
+          throw new Error(`デッキ${index + 1}には最低5枚のカードが必要です`);
+        }
 
         // 手札を5枚配る
         const hand = deckCards.slice(0, 5);
@@ -402,30 +407,30 @@ export const submitCard = mutation({
   handler: async (ctx, { battle_id, user_id, card_id, submission_type }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "word_submission") {
-      throw new Error("Not in submission phase");
+      throw new Error("提出フェーズではありません");
     }
 
     // プレイヤーを検索
     const playerIndex = battle.players.findIndex((p) => p.user_id === user_id);
     if (playerIndex === -1) {
-      throw new Error("Player not found in battle");
+      throw new Error("バトルにプレイヤーが見つかりません");
     }
 
     const player = battle.players[playerIndex];
 
     // 既に提出済みかチェック
     if (player.submitted_card) {
-      throw new Error("Card already submitted");
+      throw new Error("既にカードが提出されています");
     }
 
     // 手札にカードがあるかチェック
     if (!player.hand.includes(card_id)) {
-      throw new Error("Card not in hand");
+      throw new Error("そのカードは手札にありません");
     }
 
     // カード情報を取得
@@ -499,18 +504,18 @@ export const respondToDeclaration = mutation({
   handler: async (ctx, { battle_id, user_id, response_type }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "response") {
-      throw new Error("Not in response phase");
+      throw new Error("応答フェーズではありません");
     }
 
     // 既に応答済みかチェック
     const existingResponse = battle.responses?.find((r) => r.user_id === user_id);
     if (existingResponse) {
-      throw new Error("Already responded");
+      throw new Error("既に応答済みです");
     }
 
     // 応答を追加
@@ -553,18 +558,18 @@ export const setPlayerReady = mutation({
   handler: async (ctx, { battle_id, user_id }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "player_action") {
-      throw new Error("Not in player action phase");
+      throw new Error("アクションフェーズではありません");
     }
 
     // プレイヤーを検索
     const playerIndex = battle.players.findIndex((p) => p.user_id === user_id);
     if (playerIndex === -1) {
-      throw new Error("Player not found in battle");
+      throw new Error("バトルにプレイヤーが見つかりません");
     }
 
     // プレイヤー状態を更新
@@ -608,36 +613,36 @@ export const exchangeCards = mutation({
   handler: async (ctx, { battle_id, user_id, discard_card_ids, draw_source }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "player_action") {
-      throw new Error("Not in player action phase");
+      throw new Error("アクションフェーズではありません");
     }
 
     // プレイヤーを検索
     const playerIndex = battle.players.findIndex((p) => p.user_id === user_id);
     if (playerIndex === -1) {
-      throw new Error("Player not found in battle");
+      throw new Error("バトルにプレイヤーが見つかりません");
     }
 
     const player = battle.players[playerIndex];
 
     // 行動回数チェック
     if (player.turn_state.actions_remaining <= 0n) {
-      throw new Error("No actions remaining");
+      throw new Error("残り行動回数がありません");
     }
 
     // 破棄枚数チェック
     if (discard_card_ids.length === 0 || discard_card_ids.length > 5) {
-      throw new Error("Invalid number of cards to discard");
+      throw new Error("破棄するカード枚数が不正です（1-5枚）");
     }
 
     // 手札にあるカードかチェック
     const allInHand = discard_card_ids.every((cardId) => player.hand.includes(cardId));
     if (!allInHand) {
-      throw new Error("Some cards are not in hand");
+      throw new Error("手札にないカードが含まれています");
     }
 
     // カードをドロー
@@ -646,7 +651,7 @@ export const exchangeCards = mutation({
     if (draw_source === "deck") {
       // デッキからドロー
       if (player.turn_state.deck_cards_remaining < BigInt(discard_card_ids.length)) {
-        throw new Error("Not enough cards in deck");
+        throw new Error("デッキに十分なカードがありません");
       }
 
       const deckCards = await getDeckCards(ctx, player.deck_ref);
@@ -657,10 +662,14 @@ export const exchangeCards = mutation({
     } else {
       // プールからランダムドロー
       const allCards = await ctx.db.query("card").collect();
-      const shuffled = [...allCards].sort(() => Math.random() - 0.5);
-      drawnCards = shuffled.slice(0, discard_card_ids.length).map((c) => c._id);
+      const cardIds = allCards.map((c) => c._id);
+      // カードをシャッフル
+      for (let i = cardIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cardIds[i], cardIds[j]] = [cardIds[j], cardIds[i]];
+      }
+      drawnCards = cardIds.slice(0, discard_card_ids.length);
     }
-
     // 手札を更新
     const newHand = player.hand.filter((cardId) => !discard_card_ids.includes(cardId));
     newHand.push(...drawnCards);
@@ -716,38 +725,38 @@ export const generateWord = mutation({
   handler: async (ctx, { battle_id, user_id, positive_cards, negative_cards }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "player_action") {
-      throw new Error("Not in player action phase");
+      throw new Error("アクションフェーズではありません");
     }
 
     // プレイヤーを検索
     const playerIndex = battle.players.findIndex((p) => p.user_id === user_id);
     if (playerIndex === -1) {
-      throw new Error("Player not found in battle");
+      throw new Error("バトルにプレイヤーが見つかりません");
     }
 
     const player = battle.players[playerIndex];
 
     // 行動回数チェック
     if (player.turn_state.actions_remaining <= 0n) {
-      throw new Error("No actions remaining");
+      throw new Error("残り行動回数がありません");
     }
 
     // カード枚数チェック
     const totalCards = positive_cards.length + negative_cards.length;
     if (totalCards < 2 || totalCards > 5) {
-      throw new Error("Total cards must be between 2 and 5");
+      throw new Error("使用するカードは2-5枚の間で指定してください");
     }
 
     // 全てのカードが手札にあるかチェック
     const allCards = [...positive_cards, ...negative_cards];
     const allInHand = allCards.every((cardId) => player.hand.includes(cardId));
     if (!allInHand) {
-      throw new Error("Some cards are not in hand");
+      throw new Error("手札にないカードが含まれています");
     }
 
     // カード情報を取得
@@ -770,13 +779,19 @@ export const generateWord = mutation({
     try {
       const API_BASE_URL = process.env.WORD_SENCE_API_URL;
       if (!API_BASE_URL) {
-        throw new Error("WORD_SENCE_API_URL is not set");
+        throw new Error("環境変数 WORD_SENCE_API_URL が設定されていません");
       }
 
-      const response = await axios.post(`${API_BASE_URL}/analyze`, {
-        positive: positiveTexts,
-        negative: negativeTexts,
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/analyze`,
+        {
+          positive: positiveTexts,
+          negative: negativeTexts,
+        },
+        {
+          timeout: 10000,
+        }
+      );
 
       // APIは [["単語", スコア]] の形式で返す
       generatedWord = response.data.result[0][0];
@@ -786,7 +801,7 @@ export const generateWord = mutation({
       } else {
         console.error("Failed to generate word:", error);
       }
-      throw new Error("Word generation failed. Please try again.");
+      throw new Error("単語生成に失敗しました。もう一度お試しください。");
     }
 
     // 生成された単語に対応するカードを検索
@@ -841,7 +856,8 @@ export const generateWord = mutation({
         success: true,
         generatedCard: fallbackCard._id,
         generatedCardText: fallbackCard.text,
-        warning: "Generated word not found in database. Random card selected.",
+        warning:
+          "生成された単語がデータベースに見つかりませんでした。ランダムなカードを選択しました。",
       };
     }
 
@@ -894,12 +910,28 @@ async function transitionToPointCalculation(ctx: MutationCtx, battleId: Id<"batt
   const battle = await ctx.db.get(battleId);
   if (!battle) return;
 
-  // 2人対戦の場合のポイント計算
+  // プレイヤー数による分岐
+  if (battle.players.length === 2) {
+    await transitionToPointCalculation2Players(ctx, battle, battleId);
+  } else {
+    // TODO: Phase 2で実装
+    await transitionToPointCalculationMultiPlayers(battle);
+  }
+}
+
+/**
+ * 2人対戦のポイント計算フェーズ
+ */
+async function transitionToPointCalculation2Players(
+  ctx: MutationCtx,
+  battle: Doc<"battle">,
+  battleId: Id<"battle">
+) {
   if (battle.players.length === 2) {
     const [player1, player2] = battle.players;
 
     if (!player1.submitted_card || !player2.submitted_card) {
-      throw new Error("Not all players have submitted cards");
+      throw new Error("全てのプレイヤーがカードを提出していません");
     }
 
     // 応答を取得
@@ -940,7 +972,7 @@ async function transitionToPointCalculation(ctx: MutationCtx, battleId: Id<"batt
     const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
     const submissions = await Promise.all(
       battle.players.map(async (player) => {
-        if (!player.submitted_card) throw new Error("Missing submitted card");
+        if (!player.submitted_card) throw new Error("提出されたカードがありません");
         const card = await getCardOrThrow(ctx, player.submitted_card.card_id);
         const response = battle.responses?.find((r) => r.user_id === player.user_id);
         return {
@@ -1003,6 +1035,19 @@ async function transitionToPointCalculation(ctx: MutationCtx, battleId: Id<"batt
 }
 
 /**
+ * 3人以上の対戦のポイント計算フェーズ（未実装）
+ *
+ * TODO: Phase 2で実装予定
+ *
+ */
+async function transitionToPointCalculationMultiPlayers(battle: Doc<"battle">) {
+  // TODO: 3人以上の対戦ロジックを実装
+  throw new Error(
+    `${battle.players.length}人対戦はまだサポートされていません。Phase 2で実装予定です！`
+  );
+}
+
+/**
  * 次のラウンドを開始
  */
 export const startNextRound = mutation({
@@ -1010,17 +1055,17 @@ export const startNextRound = mutation({
   handler: async (ctx, { battle_id }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     // フェーズチェック
     if (battle.current_phase !== "point_calculation") {
-      throw new Error("Not in point calculation phase");
+      throw new Error("ポイント計算フェーズではありません");
     }
 
     // ゲーム終了チェック
     if (battle.game_status === "finished") {
-      throw new Error("Battle already finished");
+      throw new Error("バトルは既に終了しています");
     }
 
     // 新しいお題カードを選択
@@ -1062,7 +1107,7 @@ export const checkPhaseTimeout = mutation({
   handler: async (ctx, { battle_id }) => {
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
-      throw new Error("Battle not found");
+      throw new Error("バトルが見つかりません");
     }
 
     if (battle.game_status !== "active") {
