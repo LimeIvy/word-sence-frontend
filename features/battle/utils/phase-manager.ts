@@ -52,7 +52,7 @@ export function shouldTransitionToNextPhase(battle: Battle): boolean {
       // 全プレイヤーが提出完了
       return players.every((p) => p.submitted_card !== undefined);
 
-    case "response":
+    case "response": {
       // 勝利宣言がない場合はスキップ
       const hasDeclaration = players.some(
         (p) => p.submitted_card?.submission_type === "victory_declaration"
@@ -62,7 +62,7 @@ export function shouldTransitionToNextPhase(battle: Battle): boolean {
       }
       // 全プレイヤーが応答完了（実装はConvex側で）
       return false;
-
+    }
     case "point_calculation":
       // 演出時間経過後
       return true;
