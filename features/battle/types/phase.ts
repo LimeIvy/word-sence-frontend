@@ -33,7 +33,7 @@ export const PHASE_DISPLAY_NAMES: Record<BattlePhase, string> = {
 /**
  * アクションフェーズで実行可能な行動
  */
-export type PlayerAction = "card_exchange" | "word_generation" | "ready";
+export type PlayerAction = "card_exchange" | "word_generation";
 
 /**
  * アクションフェーズの最大行動回数
