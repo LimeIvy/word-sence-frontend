@@ -153,7 +153,7 @@ export function getPlayerHandCards(
 
 /**
  * バトルデータの準備（カード情報の取得と変換）
- * この関数は実際のデータ取得処理を含むため、useBattleフックから呼び出される想定
+ * この型は useBattle.ts で使用されています。
  */
 export interface PreparedBattleData {
   /** 自分のプレイヤー状態 */
@@ -170,43 +170,4 @@ export interface PreparedBattleData {
   isDeckCards: Record<string, boolean>;
   /** レアリティボーナスマップ */
   rarityBonuses: Record<string, number>;
-}
-
-/**
- * バトルデータを準備（カード情報の取得と変換）
- * 注: この関数は実際のデータ取得処理は含まない。
- * useBattleフックでカード情報を取得した後、この関数を使用してデータを変換する。
- */
-export function prepareBattleData(
-  battle: Battle,
-  myUserId: Id<"user">,
-  cardDocs: Doc<"card">[]
-): PreparedBattleData | null {
-  const myPlayer = getMyPlayerState(battle, myUserId);
-  const opponentPlayer = getOpponentPlayerState(battle, myUserId);
-
-  if (!myPlayer || !opponentPlayer) {
-    return null;
-  }
-
-  const cardMap = createCardMap(cardDocs);
-  const myHand = getPlayerHandCards(myPlayer, cardMap);
-  const fieldCardText = getFieldCardText(battle.field_card_id, cardMap);
-
-  // デッキカード判定（デッキカードリストはbattleの情報から取得できないため、
-  // 別途デッキ情報を取得する必要がある。ここでは空の配列を仮定）
-  // TODO: 実際のデッキカードリストを取得する必要がある
-  const deckCardIds: Id<"card">[] = []; // 実際の実装ではデッキ情報から取得
-  const isDeckCards = createDeckCardMap(myPlayer.hand, deckCardIds);
-  const rarityBonuses = createRarityBonusMap(myPlayer.hand, cardMap, isDeckCards);
-
-  return {
-    myPlayer,
-    opponentPlayer,
-    myHand,
-    fieldCardText,
-    cardMap,
-    isDeckCards,
-    rarityBonuses,
-  };
 }

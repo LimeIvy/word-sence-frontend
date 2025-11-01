@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useBattle } from "../hooks/useBattle";
 import { usePhaseTimer } from "../hooks/usePhaseTimer";
@@ -111,21 +111,26 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     await respondToDeclaration("fold");
   }, [respondToDeclaration]);
 
-  // ラウンド結果モーダルの処理
-  const latestRoundResult = battle?.round_results[battle.round_results.length - 1];
-  const shouldShowRoundResult =
-    battle?.current_phase === "point_calculation" && latestRoundResult && !isRoundResultModalOpen;
+  // ラウンド結果の安全な取得
+  const roundResults = battle?.round_results;
+  const latestRoundResult = roundResults?.[roundResults.length - 1];
 
-  if (shouldShowRoundResult) {
-    setIsRoundResultModalOpen(true);
-  }
+  // ラウンド結果モーダルの表示制御（useEffectで処理）
+  useEffect(() => {
+    const shouldShow =
+      battle?.current_phase === "point_calculation" && latestRoundResult && !isRoundResultModalOpen;
+    if (shouldShow) {
+      setIsRoundResultModalOpen(true);
+    }
+  }, [battle?.current_phase, latestRoundResult, isRoundResultModalOpen]);
 
-  // バトル終了チェック
-  const shouldShowBattleResult = battle?.game_status === "finished" && !isBattleResultModalOpen;
-
-  if (shouldShowBattleResult) {
-    setIsBattleResultModalOpen(true);
-  }
+  // バトル終了モーダルの表示制御（useEffectで処理）
+  useEffect(() => {
+    const shouldShow = battle?.game_status === "finished" && !isBattleResultModalOpen;
+    if (shouldShow) {
+      setIsBattleResultModalOpen(true);
+    }
+  }, [battle?.game_status, isBattleResultModalOpen]);
 
   // ローディング状態
   if (isLoading || !battle || !myPlayer || !opponentPlayer) {
