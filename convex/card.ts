@@ -104,6 +104,35 @@ export const getCardsByDetails = query({
   },
 });
 
+/**
+ * カードIDの配列からカード情報を一括取得
+ */
+export const getCardsByIds = query({
+  args: {
+    cardIds: v.array(v.id("card")),
+  },
+  handler: async (ctx, { cardIds }) => {
+    if (cardIds.length === 0) {
+      return [];
+    }
+
+    // 並列でカードを取得
+    const cards = await Promise.all(
+      cardIds.map(async (cardId) => {
+        try {
+          const card = await ctx.db.get(cardId);
+          return card;
+        } catch (error) {
+          console.error(`getCardsByIds - error fetching card ${cardId}:`, error);
+          return null;
+        }
+      })
+    );
+
+    return cards.filter((card): card is NonNullable<typeof card> => card !== null);
+  },
+});
+
 //ユーザの所持カードを取得する
 export const getUserCards = query({
   handler: async (ctx) => {
