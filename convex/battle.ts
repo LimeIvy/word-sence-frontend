@@ -2,7 +2,7 @@ import axios from "axios";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./user";
 
 const submissionTypeValidator = v.union(v.literal("normal"), v.literal("victory_declaration"));
@@ -368,6 +368,85 @@ export const getUserBattles = query({
       .collect();
 
     return battles.filter((battle) => battle.player_ids.includes(userId));
+  },
+});
+
+/**
+ * バトルを作成（内部用：認証チェックなし）
+ */
+export const createBattleInternal = internalMutation({
+  args: {
+    player_ids: v.array(v.id("user")),
+    deck_ids: v.array(v.id("deck")),
+  },
+  handler: async (ctx, { player_ids, deck_ids }) => {
+    // 入力検証
+    if (player_ids.length !== deck_ids.length) {
+      throw new Error("プレイヤーIDとデッキIDの長さが一致しません");
+    }
+    if (player_ids.length !== 2) {
+      throw new Error("現在は2人のプレイヤーのみ対戦可能です");
+    }
+
+    // デッキ所有権の検証：各デッキが対応するプレイヤーのものであることを確認
+    for (let i = 0; i < player_ids.length; i++) {
+      await verifyDeckOwnership(ctx, deck_ids[i], player_ids[i]);
+    }
+
+    // お題カードをランダムに選択
+    const fieldCardId = await getRandomFieldCard(ctx);
+
+    // 各プレイヤーの初期状態を作成
+    const players = await Promise.all(
+      player_ids.map(async (userId, index) => {
+        const deckId = deck_ids[index];
+        const deckCards = await getDeckCards(ctx, deckId);
+
+        // デッキサイズの検証
+        if (deckCards.length < 5) {
+          throw new Error(`デッキ${index + 1}には最低5枚のカードが必要です`);
+        }
+
+        // 手札を5枚配る
+        const hand = deckCards.slice(0, 5);
+        const remainingDeck = deckCards.slice(5);
+
+        return {
+          user_id: userId,
+          score: 0n,
+          hand,
+          deck_ref: deckId,
+          turn_state: {
+            actions_remaining: 3n,
+            actions_log: [],
+            deck_cards_remaining: BigInt(remainingDeck.length),
+          },
+          submitted_card: undefined,
+          is_ready: false,
+          is_connected: true,
+          last_action_time: Date.now(),
+        };
+      })
+    );
+
+    // バトルを作成
+    const now = Date.now();
+    const battleId = await ctx.db.insert("battle", {
+      player_ids,
+      game_status: "active",
+      winner_ids: undefined,
+      current_round: 1n,
+      current_phase: "field_card_presentation",
+      field_card_id: fieldCardId,
+      players,
+      phase_start_time: now,
+      responses: undefined,
+      round_results: [],
+      created_at: now,
+      updated_at: now,
+    });
+
+    return { battleId };
   },
 });
 
