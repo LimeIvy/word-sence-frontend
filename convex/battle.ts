@@ -372,6 +372,68 @@ export const getUserBattles = query({
 });
 
 /**
+ * 類似度プレビューを取得
+ * お題カードと手札カードの類似度を計算して返す
+ */
+export const calculateSimilarityPreview = query({
+  args: {
+    battleId: v.id("battle"),
+    userId: v.id("user"),
+    handCardIds: v.array(v.id("card")),
+  },
+  handler: async (ctx, { battleId, userId, handCardIds }) => {
+    // 認証チェック
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    if (currentUser._id !== userId) {
+      throw new Error("自分のユーザーIDのみ指定できます");
+    }
+
+    // バトル情報を取得
+    const battle = await ctx.db.get(battleId);
+    if (!battle) {
+      throw new Error("バトルが見つかりません");
+    }
+
+    // 参加者チェック
+    if (!battle.player_ids.includes(userId)) {
+      throw new Error("このバトルの参加者のみが類似度を取得できます");
+    }
+
+    // フェーズチェック（提出フェーズでのみ使用可能）
+    if (battle.current_phase !== "word_submission") {
+      throw new Error("類似度プレビューは提出フェーズでのみ使用可能です");
+    }
+
+    // お題カードを取得
+    const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
+    const fieldCardText = fieldCard.text;
+
+    // 手札カードの情報を取得
+    const handCards = await Promise.all(
+      handCardIds.map(async (cardId) => {
+        const card = await getCardOrThrow(ctx, cardId);
+        return { cardId, text: card.text };
+      })
+    );
+
+    // 各手札カードの類似度を計算
+    const similarities: Record<string, number> = {};
+    for (const handCard of handCards) {
+      try {
+        const similarity = await calculateSimilarityScore(fieldCardText, handCard.text);
+        similarities[handCard.cardId] = similarity;
+      } catch (error) {
+        console.error(`Failed to calculate similarity for card ${handCard.cardId}:`, error);
+        // エラー時はフォールバック値を設定
+        similarities[handCard.cardId] = 0.5;
+      }
+    }
+
+    return similarities;
+  },
+});
+
+/**
  * バトルを作成
  */
 export const createBattle = mutation({

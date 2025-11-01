@@ -44,6 +44,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     fieldCardText,
     isDeckCards,
     rarityBonuses,
+    similarities,
     exchangeCards,
     generateWord,
     submitCard,
@@ -160,10 +161,6 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
   const currentPhase = battle.current_phase;
   const myScore = myPlayer.score;
   const opponentScore = opponentPlayer.score;
-
-  // 類似度マップ（提出フェーズで使用）
-  // TODO: 実際の類似度計算を実装
-  const similarities: Record<string, number> = {};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100">
