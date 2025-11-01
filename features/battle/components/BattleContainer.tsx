@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
@@ -62,22 +62,45 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     cardMap,
   } = useBattle({ battleId, myUserId });
 
+  // タイムアウトチェック用のミューテーション
+  const checkPhaseTimeoutMutation = useMutation(api.battle.checkPhaseTimeout);
+
   // ラウンド結果モーダルの表示履歴を追跡
   const shownRoundRef = useRef<number>(-1);
   // バトル終了モーダルの表示履歴を追跡
   const hasShownBattleResultRef = useRef<boolean>(false);
+  // タイムアウト処理の実行中フラグ
+  const isTimeoutProcessingRef = useRef<boolean>(false);
 
   // タイムアウト時の処理（メモ化）
-  const handlePhaseTimeout = useCallback(() => {
-    // タイムアウト時の処理（自動処理など）
-    console.log("Phase timeout");
-  }, []);
+  const handlePhaseTimeout = useCallback(async () => {
+    // 既に処理中の場合はスキップ
+    if (isTimeoutProcessingRef.current) {
+      return;
+    }
+
+    try {
+      isTimeoutProcessingRef.current = true;
+      console.log("Phase timeout detected, calling checkPhaseTimeout");
+      await checkPhaseTimeoutMutation({ battle_id: battleId });
+    } catch (error) {
+      console.error("Failed to check phase timeout:", error);
+    } finally {
+      // 少し遅延させてからフラグをリセット（フェーズ遷移が反映されるまで）
+      setTimeout(() => {
+        isTimeoutProcessingRef.current = false;
+      }, 1000);
+    }
+  }, [battleId, checkPhaseTimeoutMutation]);
 
   // フェーズタイマー
+  // battleがまだロードされていない場合は、タイマーを開始しない（0を返す）
+  const phaseStartTime = battle?.phase_start_time;
+  const battleCurrentPhase = battle?.current_phase ?? "field_card_presentation";
   const timeRemaining = usePhaseTimer(
-    battle?.phase_start_time ?? Date.now(),
-    battle?.current_phase ?? "field_card_presentation",
-    handlePhaseTimeout
+    phaseStartTime ?? 0,
+    battleCurrentPhase,
+    battle ? handlePhaseTimeout : undefined
   );
 
   // モーダルハンドラー
@@ -155,6 +178,18 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
       setIsBattleResultModalOpen(true);
     }
   }, [battle?.game_status]);
+
+  // バトル結果モーダルが閉じられたときに/battleにリダイレクト
+  useEffect(() => {
+    if (
+      battle?.game_status === "finished" &&
+      hasShownBattleResultRef.current &&
+      !isBattleResultModalOpen
+    ) {
+      // モーダルが閉じられたらリダイレクト
+      router.push("/battle");
+    }
+  }, [battle?.game_status, isBattleResultModalOpen, router]);
 
   // ユーザー名を取得（profileからnameを取得）
   const myName = useMemo(() => {
@@ -554,7 +589,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
           onClose={() => setIsBattleResultModalOpen(false)}
           battle={battle}
           myUserId={myUserId}
-          onGoHome={() => router.push("/")}
+          onGoHome={() => router.push("/game")}
         />
       )}
     </div>

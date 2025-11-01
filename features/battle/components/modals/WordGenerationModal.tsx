@@ -101,18 +101,22 @@ export function WordGenerationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="w-5 h-5" />
             単語生成
           </DialogTitle>
           <DialogDescription>
             +ゾーンと-ゾーンにカードを配置して新しい単語を生成します（合計2-5枚）
+            <br />
+            <span className="text-xs text-gray-500">
+              💡 左クリックで+ゾーン、右クリックで-ゾーンに追加
+            </span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4 flex-1 overflow-y-auto min-h-0">
           {/* +ゾーン */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -156,7 +160,15 @@ export function WordGenerationModal({
               <Label className="text-base font-semibold">-ゾーン（意味を減算）</Label>
               <span className="text-sm text-gray-600">{negativeCardIds.length}枚選択中</span>
             </div>
-            <div className="flex justify-center gap-3 px-4 py-6 bg-red-50 rounded-lg border-2 border-dashed border-red-300 min-h-[160px]">
+            <div
+              className="flex justify-center gap-3 px-4 py-6 bg-red-50 rounded-lg border-2 border-dashed border-red-300 min-h-[160px] cursor-pointer"
+              onClick={(e) => {
+                // 未選択カードを右クリックまたはShift+クリックで-ゾーンに追加する機能は、未選択カードエリアで処理
+                if (e.target === e.currentTarget) {
+                  return;
+                }
+              }}
+            >
               {negativeCardIds.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <span className="text-2xl mb-1">-</span>
@@ -194,7 +206,13 @@ export function WordGenerationModal({
                   <div
                     key={card.id}
                     className="relative transition-all hover:scale-105 cursor-pointer"
-                    onClick={() => handlePositiveCardClick(card.id)}
+                    onClick={() => {
+                      handlePositiveCardClick(card.id);
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      handleNegativeCardClick(card.id);
+                    }}
                   >
                     <HandCard
                       card={card}
@@ -207,47 +225,49 @@ export function WordGenerationModal({
             </div>
           )}
 
-          {/* 選択状況表示 */}
-          <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-blue-900">選択状況</span>
-              <span className="text-blue-700">合計: {totalCards}枚（最小2枚、最大5枚）</span>
+          {/* 選択状況表示とベクトル演算プレビューを横並びに */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* 選択状況表示 */}
+            <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-blue-900">選択状況</span>
+                <span className="text-blue-700">{totalCards}枚</span>
+              </div>
+              {!canGenerate && totalCards > 0 && (
+                <div className="mt-2 text-xs text-red-600">
+                  {totalCards < 2
+                    ? "カードを2枚以上選択してください"
+                    : "カードは最大5枚まで選択できます"}
+                </div>
+              )}
             </div>
-            {!canGenerate && totalCards > 0 && (
-              <div className="mt-2 text-xs text-red-600">
-                {totalCards < 2
-                  ? "カードを2枚以上選択してください"
-                  : "カードは最大5枚まで選択できます"}
+
+            {/* ベクトル演算プレビュー */}
+            {canGenerate && (
+              <div className="px-4 py-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="text-sm font-semibold text-purple-900 mb-2">
+                  ベクトル演算プレビュー
+                </div>
+                <div className="text-xs text-purple-700 space-y-1">
+                  <div>
+                    +:{" "}
+                    {positiveCardIds.map((id) => cards.find((c) => c.id === id)?.name).join(" + ")}
+                  </div>
+                  {negativeCardIds.length > 0 && (
+                    <div>
+                      -:{" "}
+                      {negativeCardIds
+                        .map((id) => cards.find((c) => c.id === id)?.name)
+                        .join(" + ")}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {/* ベクトル演算プレビュー */}
-          {canGenerate && (
-            <div className="px-4 py-3 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="text-sm font-semibold text-purple-900 mb-2">
-                ベクトル演算プレビュー
-              </div>
-              <div className="text-xs text-purple-700 space-y-1">
-                <div>
-                  +ゾーン:{" "}
-                  {positiveCardIds.map((id) => cards.find((c) => c.id === id)?.name).join(" + ")}
-                </div>
-                {negativeCardIds.length > 0 && (
-                  <div>
-                    -ゾーン:{" "}
-                    {negativeCardIds.map((id) => cards.find((c) => c.id === id)?.name).join(" + ")}
-                  </div>
-                )}
-                <div className="mt-2 pt-2 border-t border-purple-300">
-                  → 新しい単語が生成されます
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
             キャンセル
           </Button>

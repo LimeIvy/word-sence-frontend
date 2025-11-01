@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
@@ -81,6 +81,10 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
   const submitCardMutation = useMutation(api.battle.submitCard);
   const respondToDeclarationMutation = useMutation(api.battle.respondToDeclaration);
 
+  // アクション
+  const generateWordAction = useAction(api.battle.generateWordAction);
+  const calculateSimilarityPreviewAction = useAction(api.battle.calculateSimilarityPreview);
+
   // カード情報を取得（手札とお題カード）
   const cardIds = useMemo(() => {
     if (!battle) return [];
@@ -125,16 +129,28 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
     return myPlayerState.hand;
   }, [battle?.current_phase, myPlayerState]);
 
-  const similarityPreview = useQuery(
-    api.battle.calculateSimilarityPreview,
-    battle && myPlayerState && handCardIdsForPreview.length > 0
-      ? {
-          battleId: battleId,
-          userId: myUserId,
-          handCardIds: handCardIdsForPreview,
-        }
-      : "skip"
-  );
+  // TODO: calculateSimilarityPreviewはactionに変更されたため、リアルタイム更新されない
+  // 将来的には、queryとして実装できるようにするか、定期的にactionを呼び出す仕組みが必要
+  const [similarityPreview, setSimilarityPreview] = useState<Record<string, number>>({});
+
+  // 手札が変更されたときにactionを呼び出す（簡易実装）
+  useEffect(() => {
+    if (battle && myPlayerState && handCardIdsForPreview.length > 0) {
+      calculateSimilarityPreviewAction({
+        battleId: battleId,
+        userId: myUserId,
+        handCardIds: handCardIdsForPreview,
+      })
+        .then(setSimilarityPreview)
+        .catch(console.error);
+    }
+  }, [
+    battle?.field_card_id,
+    handCardIdsForPreview.join(","),
+    calculateSimilarityPreviewAction,
+    battleId,
+    myUserId,
+  ]);
 
   // データを準備
   const preparedData = useMemo<PreparedBattleData | null>(() => {
@@ -199,13 +215,40 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
       return;
     }
 
+    if (!cardMap) {
+      toast.error("カード情報が取得できません");
+      return;
+    }
+
     setIsActionLoading(true);
     try {
+      // カードIDからテキストを取得
+      const positiveTexts = positiveCards.map(
+        (cardId) => cardMap.get(cardId as Id<"card">)?.text ?? ""
+      );
+      const negativeTexts = negativeCards.map(
+        (cardId) => cardMap.get(cardId as Id<"card">)?.text ?? ""
+      );
+
+      // 空のテキストがある場合はエラー
+      if (positiveTexts.some((text) => !text) || negativeTexts.some((text) => !text)) {
+        toast.error("カード情報が見つかりません");
+        return;
+      }
+
+      // 外部APIを呼び出して単語を生成
+      const generatedWord = await generateWordAction({
+        positiveTexts,
+        negativeTexts,
+      });
+
+      // 生成された単語を使ってmutationを実行
       await generateWordMutation({
         battle_id: battleId,
         user_id: user._id,
         positive_cards: positiveCards as Id<"card">[],
         negative_cards: negativeCards as Id<"card">[],
+        generated_word: generatedWord,
       });
       toast.success("単語を生成しました");
     } catch (error) {
