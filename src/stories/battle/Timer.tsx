@@ -1,3 +1,4 @@
+import { useId } from "react";
 export interface TimerProps {
   /** 残り時間（秒） */
   remainingTime: number;
@@ -39,7 +40,7 @@ export const Timer = ({
   className = "",
 }: TimerProps) => {
   const sizeClasses = SIZE_CLASSES[size];
-
+  const uniqueId = useId();
   // 進捗率（0-100）
   const progress = (remainingTime / maxTime) * 100;
 
@@ -82,7 +83,7 @@ export const Timer = ({
   const colors = getTimerColor();
 
   // ユニークなIDを生成
-  const gradientId = `timer-gradient-${Math.random().toString(36).substr(2, 9)}`;
+  const gradientId = `timer-gradient-${uniqueId}`;
 
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
