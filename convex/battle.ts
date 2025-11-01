@@ -291,10 +291,6 @@ function isPhaseTimedOut(
   return elapsed >= PHASE_TIME_LIMITS[currentPhase];
 }
 
-// ====================
-// クエリ関数
-// ====================
-
 /**
  * バトル情報を取得
  */
@@ -323,10 +319,6 @@ export const getUserBattles = query({
     return battles.filter((battle) => battle.player_ids.includes(userId));
   },
 });
-
-// ====================
-// ミューテーション関数
-// ====================
 
 /**
  * バトルを作成
@@ -1063,7 +1055,7 @@ export const startNextRound = mutation({
 });
 
 /**
- * フェーズタイムアウトチェック（定期実行用）
+ * フェーズタイムアウトチェック（定期実行）
  */
 export const checkPhaseTimeout = mutation({
   args: { battle_id: v.id("battle") },
