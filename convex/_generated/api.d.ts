@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as battle from "../battle.js";
 import type * as card from "../card.js";
 import type * as deck from "../deck.js";
 import type * as http from "../http.js";
@@ -29,6 +30,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  battle: typeof battle;
   card: typeof card;
   deck: typeof deck;
   http: typeof http;
