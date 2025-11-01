@@ -75,10 +75,16 @@ async function calculateSimilarityScore(
   }
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/similarity`, {
-      word1: fieldCardText,
-      word2: submittedCardText,
-    });
+    const response = await axios.post(
+      `${API_BASE_URL}/similarity`,
+      {
+        word1: fieldCardText,
+        word2: submittedCardText,
+      },
+      {
+        timeout: 10000,
+      }
+    );
 
     // Word2Vecの類似度は-1〜1の範囲なので、0〜1に正規化
     const normalizedScore = (response.data.result + 1) / 2;
