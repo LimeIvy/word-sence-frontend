@@ -9,19 +9,87 @@ const rarityUnion = v.union(
   v.literal("legendary")
 );
 
+// プレイヤーの提出カード情報
+const submittedCard = v.object({
+  card_id: v.id("card"),
+  submission_type: v.union(v.literal("normal"), v.literal("victory_declaration")),
+  similarity_score: v.float64(),
+  rarity_bonus: v.float64(),
+  final_score: v.float64(),
+  is_deck_card: v.boolean(),
+});
+
+// ターン状態
+const turnState = v.object({
+  actions_remaining: v.int64(),
+  actions_log: v.array(v.any()), // ActionLog の配列
+  deck_cards_remaining: v.int64(),
+});
+
+// プレイヤーの状態
 const playerState = v.object({
   user_id: v.id("user"),
   score: v.int64(), // 現在のポイント (3点で勝利)
-  hand: v.array(v.id("card")), // リアルタイム手札状態 (5枚)
+  hand: v.array(v.id("card")), // 手札 (5枚)
   deck_ref: v.id("deck"), // 使用デッキの参照
-  turn_state: v.any(), // ターン内アクションログ
-  submitted_id: v.optional(v.id("card")),
+  turn_state: turnState,
+  submitted_card: v.optional(submittedCard),
+  is_ready: v.boolean(),
+  is_connected: v.boolean(),
+  last_action_time: v.number(),
 });
 
+// プレイヤーの応答
+const playerResponse = v.object({
+  user_id: v.id("user"),
+  response_type: v.union(v.literal("call"), v.literal("fold")),
+  timestamp: v.number(),
+});
+
+// ラウンド提出情報
+const roundSubmission = v.object({
+  user_id: v.id("user"),
+  card_id: v.id("card"),
+  card_text: v.string(),
+  submission_type: v.union(v.literal("normal"), v.literal("victory_declaration")),
+  similarity_score: v.float64(),
+  rarity_bonus: v.float64(),
+  final_score: v.float64(),
+  response_type: v.optional(v.union(v.literal("call"), v.literal("fold"))),
+});
+
+// ポイント付与情報
+const pointsAwarded = v.object({
+  user_id: v.id("user"),
+  points: v.int64(),
+  reason: v.union(
+    v.literal("normal_win"),
+    v.literal("normal_lose"),
+    v.literal("victory_declaration_success"),
+    v.literal("victory_declaration_fail"),
+    v.literal("fold_against_declaration"),
+    v.literal("opponent_fold"),
+    v.literal("draw")
+  ),
+});
+
+// ラウンド結果
+const roundResult = v.object({
+  round_number: v.int64(),
+  field_card_id: v.id("card"),
+  field_card_text: v.string(),
+  submissions: v.array(roundSubmission),
+  winner_id: v.optional(v.id("user")),
+  points_awarded: v.array(pointsAwarded),
+  timestamp: v.number(),
+});
+
+// バトルフェーズ
 const gamePhaseUnion = v.union(
   v.literal("field_card_presentation"), // 場札提示フェーズ
   v.literal("player_action"), // プレイヤーアクションフェーズ (交換/生成)
   v.literal("word_submission"), // 単語提出フェーズ
+  v.literal("response"), // 対応フェーズ
   v.literal("point_calculation") // ポイント計算フェーズ
 );
 
@@ -103,18 +171,17 @@ export default defineSchema({
   // 対戦テーブル
   battle: defineTable({
     player_ids: v.array(v.id("user")), // 参加者リスト
-    game_status: v.union(v.literal("active"), v.literal("finished")), // ゲームの進行状況
+    game_status: v.union(v.literal("waiting"), v.literal("active"), v.literal("finished")), // ゲームの進行状況
     winner_ids: v.optional(v.array(v.id("user"))), // 勝者IDの配列
-
-    current_round: v.int64(),
-
-    current_phase: gamePhaseUnion,
-
-    field_card_id: v.id("card"),
-
-    players: v.array(playerState),
-    submission_data: v.optional(v.array(v.object({ userId: v.id("user"), score: v.int64() }))),
-    last_action_time: v.number(),
+    current_round: v.int64(), // 現在のラウンド数
+    current_phase: gamePhaseUnion, // 現在のフェーズ
+    field_card_id: v.id("card"), // お題カード
+    players: v.array(playerState), // プレイヤーの状態配列
+    phase_start_time: v.number(), // フェーズ開始時刻
+    responses: v.optional(v.array(playerResponse)), // 勝利宣言への応答
+    round_results: v.array(roundResult), // ラウンド結果の履歴
+    created_at: v.number(),
+    updated_at: v.number(),
   })
     .index("by_player_id", ["player_ids"])
     .index("by_status", ["game_status"]),
