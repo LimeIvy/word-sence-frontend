@@ -1,78 +1,52 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import { useState, type HTMLAttributes } from "react";
 
 export type CardRarity = "並" | "良" | "優" | "傑" | "極";
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-  className?: string;
+export interface HandCardProps extends HTMLAttributes<HTMLDivElement> {
+  /** カードの単語 */
+  word: string;
+  /** レアリティ */
   rarity?: CardRarity;
-  cardId?: string | number;
-  quantity?: number;
+  /** 選択状態 */
+  selected?: boolean;
+  /** ホバー時に類似度を表示するか */
+  showSimilarity?: boolean;
+  /** お題カードとの類似度（0-1） */
+  similarity?: number;
+  /** デッキカードかどうか */
+  isDeckCard?: boolean;
+  /** レアリティボーナス */
+  rarityBonus?: number;
+  /** 無効化されているか */
+  disabled?: boolean;
+  /** クリック時のコールバック */
+  onCardClick?: () => void;
+  className?: string;
 }
 
-export const Card = ({
-  children,
-  className = "",
+export const HandCard = ({
+  word,
   rarity = "並",
-  cardId,
-  quantity,
+  selected = false,
+  showSimilarity = false,
+  similarity,
+  isDeckCard = true,
+  rarityBonus,
+  disabled = false,
+  onCardClick,
+  className = "",
   ...props
-}: CardProps) => {
+}: HandCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
   const showVertical = true;
 
-  const isResponsive =
-    className.includes("sm:") || className.includes("md:") || className.includes("lg:");
-
-  const fontSizes = isResponsive
-    ? {
-        textSize: showVertical ? "10px" : "12px",
-        raritySize: "11px",
-        letterSpacing: showVertical ? "0.1em" : "1.5px",
-        badgeSize: "w-6 h-6",
-      }
-    : (() => {
-        if (className.includes("w-20"))
-          return {
-            textSize: showVertical ? "10px" : "12px",
-            raritySize: "9px",
-            letterSpacing: showVertical ? "1px" : "1.5px",
-            badgeSize: "w-8 h-8",
-          };
-        if (className.includes("w-24"))
-          return {
-            textSize: showVertical ? "13px" : "15px",
-            raritySize: "11px",
-            letterSpacing: showVertical ? "1.5px" : "2px",
-            badgeSize: "w-10 h-10",
-          };
-        if (className.includes("w-28"))
-          return {
-            textSize: showVertical ? "15px" : "17px",
-            raritySize: "13px",
-            letterSpacing: showVertical ? "1.2px" : "1.8px",
-            badgeSize: "w-12 h-12",
-          };
-        if (className.includes("w-32"))
-          return {
-            textSize: showVertical ? "18px" : "20px",
-            raritySize: "15px",
-            letterSpacing: showVertical ? "1.5px" : "2px",
-            badgeSize: "w-12 h-12",
-          };
-        if (className.includes("w-36"))
-          return {
-            textSize: showVertical ? "18px" : "20px",
-            raritySize: "15px",
-            letterSpacing: showVertical ? "1.5px" : "2px",
-            badgeSize: "w-14 h-14",
-          };
-        return {
-          textSize: showVertical ? "22px" : "24px",
-          raritySize: "18px",
-          letterSpacing: showVertical ? "2px" : "3px",
-          badgeSize: "w-12 h-12",
-        };
-      })();
+  // w-24サイズ用のフォント設定
+  const fontSizes = {
+    textSize: showVertical ? "13px" : "15px",
+    raritySize: "11px",
+    letterSpacing: showVertical ? "1.5px" : "2px",
+    badgeSize: "w-10 h-10",
+  };
 
   // 共通のテキストシャドウ
   const textShadow = `
@@ -126,26 +100,38 @@ export const Card = ({
     },
   }[rarity];
 
+  // 最終スコアの計算
+  const finalScore =
+    similarity !== undefined && rarityBonus !== undefined
+      ? Math.min(1.0, similarity + rarityBonus)
+      : similarity;
+
   return (
     <div
-      className={`relative overflow-hidden select-none cursor-pointer ${className}`}
+      className={`
+        relative w-24 aspect-3/4 select-none
+        transition-all duration-300 ease-out
+        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        ${selected ? "scale-110 -translate-y-4 z-10" : "hover:scale-105 hover:-translate-y-2"}
+        ${className}
+      `}
       style={{
-        filter: "drop-shadow(0 10px 30px rgba(0,0,0,0.5))",
+        filter: selected
+          ? `drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 8px ${colors.glow})`
+          : "drop-shadow(0 10px 30px rgba(0,0,0,0.5))",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.filter = `drop-shadow(0 20px 50px rgba(0,0,0,0.7)) drop-shadow(0 0 40px ${colors.glow}80)`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.filter = "drop-shadow(0 10px 30px rgba(0,0,0,0.5))";
-      }}
+      onClick={!disabled ? onCardClick : undefined}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...props}
     >
-      {/* 外枠 - 細い黒縁 */}
+      {/* 外枠 */}
       <div
         className="w-full h-full relative"
         style={{
           background: "linear-gradient(135deg, #1A1410 0%, #0D0A08 100%)",
-          padding: "1px",
+          padding: selected ? "2px" : "1px",
+          boxShadow: selected ? `0 0 4px ${colors.glow}` : "none",
         }}
       >
         {/* メインカード部分 */}
@@ -158,15 +144,25 @@ export const Card = ({
             boxShadow: `inset 0 2px 4px rgba(255,255,255,0.15), inset 0 -2px 4px rgba(0,0,0,0.4)`,
           }}
         >
+          {/* 選択インジケーター */}
+          {selected && (
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: `radial-gradient(circle at 50% 50%, ${colors.glow}20, transparent 70%)`,
+              }}
+            />
+          )}
+
           {/* ベージュ系和紙テクスチャ */}
           <div
             className="absolute inset-0 opacity-50"
             style={{
               backgroundImage: `
-              radial-gradient(circle at 20% 30%, rgba(255,245,230,0.3) 0%, transparent 50%),
-              radial-gradient(circle at 80% 70%, rgba(255,245,230,0.2) 0%, transparent 50%),
-              radial-gradient(circle at 50% 50%, rgba(255,245,230,0.15) 0%, transparent 50%)
-            `,
+                radial-gradient(circle at 20% 30%, rgba(255,245,230,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255,245,230,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255,245,230,0.15) 0%, transparent 50%)
+              `,
               backgroundSize: "150px 150px, 200px 200px, 100px 100px",
             }}
           />
@@ -178,7 +174,7 @@ export const Card = ({
           >
             <defs>
               <pattern
-                id={`wave-${rarity}`}
+                id={`wave-${rarity}-hand`}
                 x="0"
                 y="0"
                 width="60"
@@ -199,29 +195,22 @@ export const Card = ({
                   strokeWidth="0.8"
                   opacity="0.3"
                 />
-                <path
-                  d="M0 10 Q10 5, 20 10 T40 10 T60 10"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="0.6"
-                  opacity="0.2"
-                />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill={`url(#wave-${rarity})`} />
+            <rect width="100%" height="100%" fill={`url(#wave-${rarity}-hand)`} />
           </svg>
 
           {/* 桜吹雪 */}
           <div className="absolute inset-0 opacity-30">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <div
                 key={i}
                 style={{
                   position: "absolute",
-                  left: `${10 + i * 12}%`,
+                  left: `${10 + i * 15}%`,
                   top: `${15 + (i % 3) * 25}%`,
-                  width: "10px",
-                  height: "10px",
+                  width: "8px",
+                  height: "8px",
                   background: `radial-gradient(circle at 30% 30%, ${colors.flowerColor} 0%, transparent 70%)`,
                   borderRadius: "50% 0 50% 0",
                   transform: `rotate(${i * 45}deg)`,
@@ -239,12 +228,10 @@ export const Card = ({
               className="absolute inset-0"
               style={{
                 background: `
-                radial-gradient(circle at 15% 20%, ${colors.glow}50 0%, transparent 2%),
-                radial-gradient(circle at 85% 30%, ${colors.glow}40 0%, transparent 1.5%),
-                radial-gradient(circle at 30% 75%, ${colors.glow}45 0%, transparent 2%),
-                radial-gradient(circle at 70% 80%, ${colors.glow}35 0%, transparent 1.5%),
-                radial-gradient(circle at 50% 50%, ${colors.glow}40 0%, transparent 2%)
-              `,
+                  radial-gradient(circle at 15% 20%, ${colors.glow}50 0%, transparent 2%),
+                  radial-gradient(circle at 85% 30%, ${colors.glow}40 0%, transparent 1.5%),
+                  radial-gradient(circle at 30% 75%, ${colors.glow}45 0%, transparent 2%)
+                `,
                 animation: rarity === "極" ? "sparkle 3s ease-in-out infinite" : "none",
               }}
             />
@@ -252,7 +239,7 @@ export const Card = ({
 
           {/* 上部装飾 */}
           <div
-            className="absolute top-0 left-0 right-0 h-8 flex items-center justify-center"
+            className="absolute top-0 left-0 right-0 h-6 flex items-center justify-center"
             style={{
               background: `linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%)`,
             }}
@@ -262,8 +249,8 @@ export const Card = ({
                 <div
                   key={i}
                   style={{
-                    width: "3px",
-                    height: "3px",
+                    width: "2px",
+                    height: "2px",
                     background: colors.flowerColor,
                     borderRadius: "50%",
                     opacity: 0.6,
@@ -273,22 +260,15 @@ export const Card = ({
             </div>
           </div>
 
-          {/* 枚数表示 */}
-          {quantity && quantity > 1 && (
+          {/* デッキカードアイコン */}
+          {isDeckCard && (
             <div
-              className="absolute top-1 left-1 flex items-center justify-center font-black w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12"
+              className="absolute top-1 right-1 text-xl"
               style={{
-                background: "rgba(0,0,0,0.7)",
-                borderRadius: "50%",
-                border: "2px solid white",
+                filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
               }}
             >
-              <span
-                className="text-white text-xs sm:text-sm md:text-base lg:text-lg font-bold"
-                style={{ textShadow }}
-              >
-                {quantity}
-              </span>
+              🎴
             </div>
           )}
 
@@ -305,12 +285,12 @@ export const Card = ({
               className="absolute inset-0"
               style={{
                 backgroundImage: `
-                radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
-                radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
-                radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
-                radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
-                radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%)
-              `,
+                  radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
+                  radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
+                  radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
+                  radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%),
+                  radial-gradient(circle, ${colors.flowerColor} 25%, transparent 26%)
+                `,
                 backgroundPosition: "50% 0%, 5% 40%, 95% 40%, 23% 95%, 78% 95%",
                 backgroundSize: "60% 60%",
                 backgroundRepeat: "no-repeat",
@@ -333,7 +313,7 @@ export const Card = ({
 
           {/* メイン文字 */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words text-xs sm:text-sm md:text-base lg:text-lg"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words"
             style={{
               fontSize: fontSizes.textSize,
               letterSpacing: fontSizes.letterSpacing,
@@ -343,36 +323,79 @@ export const Card = ({
               fontWeight: "700",
             }}
           >
-            {children}
+            {word}
           </div>
+
+          {/* 類似度表示 */}
+          {showSimilarity && similarity !== undefined && (
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-black/85 backdrop-blur-sm p-1.5 text-white text-[10px] space-y-0.5 z-20"
+              style={{
+                opacity: isHovered ? 1 : 0,
+                visibility: isHovered ? "visible" : "hidden",
+                pointerEvents: isHovered ? "auto" : "none",
+                transition: isHovered
+                  ? "opacity 0.3s ease-in-out, visibility 0s"
+                  : "opacity 0.3s ease-in-out, visibility 0s linear 0.3s",
+              }}
+            >
+              <div className="flex justify-between">
+                <span className="text-gray-400">類似度</span>
+                <span className="font-mono font-bold">{Math.round((similarity + 1) * 50)}点</span>
+              </div>
+
+              {rarityBonus !== undefined && rarityBonus > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">ボーナス</span>
+                    <span className="font-mono font-bold text-yellow-400">
+                      +{Math.round(rarityBonus * 50)}点
+                    </span>
+                  </div>
+                  <div className="h-px bg-gray-600 my-0.5" />
+                  <div className="flex justify-between">
+                    <span className="text-gray-300 font-semibold">最終</span>
+                    <span className="font-mono font-bold text-green-400">
+                      {Math.round(((finalScore ?? 0) + 1) * 50)}点
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {/* 下部装飾 */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-8"
+            className="absolute bottom-0 left-0 right-0 h-6"
             style={{
               background: `linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)`,
             }}
           >
             <svg className="w-full h-full opacity-40">
               <path
-                d="M0 16 Q15 10, 30 16 T60 16 T90 16 T120 16 T150 16 T180 16 T210 16 T240 16 T270 16 T300 16"
+                d="M0 12 Q10 8, 20 12 T40 12 T60 12 T80 12 T100 12"
                 stroke={colors.flowerColor}
-                strokeWidth="1.5"
+                strokeWidth="1"
                 fill="none"
                 opacity="0.6"
               />
             </svg>
-            {/* カードID表示 */}
-            {cardId && (
-              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                <span className="text-white text-xs font-bold" style={{ textShadow }}>
-                  {cardId}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* 選択チェックマーク */}
+      {selected && (
+        <div
+          className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-white shadow-lg z-20"
+          style={{
+            background: `linear-gradient(135deg, ${colors.glow}, ${colors.accent})`,
+            border: `2px solid white`,
+          }}
+        >
+          <span className="text-sm font-bold">✓</span>
+        </div>
+      )}
 
       <style>{`
         @keyframes sparkle {
@@ -404,7 +427,7 @@ export const Card = ({
             opacity: 0.6;
           }
           100% {
-            transform: translateY(10px) rotate(180deg);
+            transform: translateY(8px) rotate(180deg);
             opacity: 0.3;
           }
         }
