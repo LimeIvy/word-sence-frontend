@@ -67,6 +67,7 @@ export interface PointsAwarded {
  */
 export type PointAwardReason =
   | "normal_win" // 通常勝利 (+1)
+  | "normal_lose" // 通常敗北 (-1)
   | "victory_declaration_success" // 勝利宣言成功 (+2)
   | "victory_declaration_fail" // 勝利宣言失敗 (-2)
   | "fold_against_declaration" // 勝利宣言に対してフォールド (0)

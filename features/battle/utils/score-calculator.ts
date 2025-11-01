@@ -134,13 +134,13 @@ function calculateNormalSubmissionPoints(
   if (score1 > score2) {
     return [
       { user_id: player1.user_id, points: 1, reason: "normal_win" },
-      { user_id: player2.user_id, points: 0, reason: "draw" },
+      { user_id: player2.user_id, points: -1, reason: "normal_lose" },
     ];
   }
 
   if (score2 > score1) {
     return [
-      { user_id: player1.user_id, points: 0, reason: "draw" },
+      { user_id: player1.user_id, points: -1, reason: "normal_lose" },
       { user_id: player2.user_id, points: 1, reason: "normal_win" },
     ];
   }
@@ -277,6 +277,7 @@ function calculateDoubleDeclarationPoints(
 export function getPointReasonText(reason: PointAwardReason): string {
   const reasonTexts: Record<PointAwardReason, string> = {
     normal_win: "通常勝利",
+    normal_lose: "通常敗北",
     victory_declaration_success: "勝利宣言成功",
     victory_declaration_fail: "勝利宣言失敗",
     fold_against_declaration: "フォールド",
