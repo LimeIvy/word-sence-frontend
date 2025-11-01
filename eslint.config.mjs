@@ -12,81 +12,90 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [...compat.extends(
-  "next/core-web-vitals",
-  "next/typescript",
-  "plugin:@typescript-eslint/recommended",
-  "plugin:react/recommended",
-  "plugin:react-hooks/recommended",
-  "plugin:prettier/recommended"
-), {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
-}, {
-  files: ["**/*.{ts,tsx}"],
-  rules: {
-    "react-hooks/exhaustive-deps": "off",
-    "react/react-in-jsx-scope": "off",
-    "prettier/prettier": "error",
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "variable",
-        format: ["camelCase"],
-      },
-      {
-        selector: "parameter",
-        format: ["camelCase"],
-      },
-      {
-        selector: "typeLike",
-        format: ["PascalCase"],
-      },
-    ],
+const eslintConfig = [
+  ...compat.extends(
+    "next/core-web-vitals",
+    "next/typescript",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:prettier/recommended"
+  ),
+  {
+    ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
   },
-}, {
-  files: ["**/*.ts"],
-  rules: {
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "function",
-        format: ["camelCase"],
-      },
-    ],
+  {
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      "react-hooks/exhaustive-deps": "off",
+      "react/react-in-jsx-scope": "off",
+      "prettier/prettier": "error",
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "variable",
+          format: ["camelCase"],
+        },
+        {
+          selector: "parameter",
+          format: ["camelCase"],
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+      ],
+    },
   },
-}, {
-  files: ["**/app/api/**/*.ts"],
-  rules: {
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "function",
-        format: ["UPPER_CASE"],
-      },
-    ],
+  {
+    files: ["**/*.ts"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "function",
+          format: ["camelCase"],
+        },
+      ],
+    },
   },
-}, {
-  files: ["**/*.tsx"],
-  rules: {
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "function",
-        format: ["PascalCase"],
-      },
-    ],
+  {
+    files: ["**/app/api/**/*.ts"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "function",
+          format: ["UPPER_CASE"],
+        },
+      ],
+    },
   },
-}, {
-  files: ["**/shadcn/**/*"],
-  rules: {
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        selector: "function",
-        format: ["PascalCase", "camelCase"],
-      },
-    ],
+  {
+    files: ["**/*.tsx"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "function",
+          format: ["PascalCase"],
+        },
+      ],
+    },
   },
-}, ...storybook.configs["flat/recommended"]];
+  {
+    files: ["**/shadcn/**/*"],
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "function",
+          format: ["PascalCase", "camelCase"],
+        },
+      ],
+    },
+  },
+  ...storybook.configs["flat/recommended"],
+];
 
 export default eslintConfig;
