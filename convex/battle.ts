@@ -731,6 +731,11 @@ export const exchangeCards = mutation({
       const usedCards = new Set([...player.hand]);
       const availableCards = deckCards.filter((cardId) => !usedCards.has(cardId));
 
+      // 利用可能なカードが十分にあるか確認
+      if (availableCards.length < discard_card_ids.length) {
+        throw new Error("デッキに利用可能なカードが不足しています");
+      }
+
       drawnCards = availableCards.slice(0, discard_card_ids.length);
     } else {
       // プールからランダムドロー
@@ -1323,39 +1328,40 @@ export const checkPhaseTimeout = mutation({
         break;
       }
 
-      case "point_calculation": {
-        // 自動的に次のラウンドへ
-        const updatedBattle = await ctx.db.get(battle_id);
-        if (updatedBattle && updatedBattle.game_status !== "finished") {
-          // 新しいお題カードを選択
-          const newFieldCard = await getRandomFieldCard(ctx);
+      case "point_calculation":
+        {
+          // 自動的に次のラウンドへ
+          const updatedBattle = await ctx.db.get(battle_id);
+          if (updatedBattle && updatedBattle.game_status !== "finished") {
+            // 新しいお題カードを選択
+            const newFieldCard = await getRandomFieldCard(ctx);
 
-          // プレイヤー状態をリセット
-          const resetPlayers = updatedBattle.players.map((player) => ({
-            ...player,
-            turn_state: {
-              actions_remaining: 3n,
-              actions_log: [],
-              deck_cards_remaining: player.turn_state.deck_cards_remaining,
-            },
-            submitted_card: undefined,
-            is_ready: false,
-            last_action_time: Date.now(),
-          }));
+            // プレイヤー状態をリセット
+            const resetPlayers = updatedBattle.players.map((player) => ({
+              ...player,
+              turn_state: {
+                actions_remaining: 3n,
+                actions_log: [],
+                deck_cards_remaining: player.turn_state.deck_cards_remaining,
+              },
+              submitted_card: undefined,
+              is_ready: false,
+              last_action_time: Date.now(),
+            }));
 
-          // 次のラウンドへ
-          await ctx.db.patch(battle_id, {
-            current_round: updatedBattle.current_round + 1n,
-            current_phase: "field_card_presentation",
-            field_card_id: newFieldCard,
-            players: resetPlayers,
-            phase_start_time: Date.now(),
-            responses: undefined,
-            updated_at: Date.now(),
-          });
+            // 次のラウンドへ
+            await ctx.db.patch(battle_id, {
+              current_round: updatedBattle.current_round + 1n,
+              current_phase: "field_card_presentation",
+              field_card_id: newFieldCard,
+              players: resetPlayers,
+              phase_start_time: Date.now(),
+              responses: undefined,
+              updated_at: Date.now(),
+            });
+          }
         }
         break;
-      }
     }
 
     return { timedOut: true };
