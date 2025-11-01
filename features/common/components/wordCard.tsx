@@ -1,11 +1,10 @@
 import type { HTMLAttributes, ReactNode } from "react";
-
-export type CardRarity = "並" | "良" | "優" | "傑" | "極";
+import type { RarityJapanese } from "../types/rarity";
 
 export interface WordCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   className?: string;
-  rarity?: CardRarity;
+  rarity?: RarityJapanese;
   cardId?: string | number;
   quantity?: number;
 }

@@ -1,4 +1,4 @@
-import { rarities, type RarityConfig } from "../types/ratity";
+import { rarities, type RarityConfig } from "../types/rarity";
 
 // 重み付き抽選でレアリティを決める
 export function pickRarity(rand = Math.random()): RarityConfig {

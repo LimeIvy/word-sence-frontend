@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rarities, RarityConfig } from "../types/ratity";
+import { rarities, RarityConfig } from "../types/rarity";
 
 // Legendaryカード用のリスト
 function LegendaryCardList() {
@@ -92,7 +92,7 @@ export default function AllCardList() {
             <DialogDescription asChild>
               <Tabs
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={(value) => setActiveTab(value as "並" | "良" | "優" | "傑" | "極")}
                 className=" mt-5 flex items-center gap-5"
               >
                 <TabsList>

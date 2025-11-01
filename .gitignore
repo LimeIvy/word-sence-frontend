@@ -45,3 +45,5 @@ storybook-static
 node_modules
 
 .coderabbit.yaml
+
+.cursor

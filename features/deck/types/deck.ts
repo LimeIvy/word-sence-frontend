@@ -1,4 +1,4 @@
-import { Card, UserCard } from "./card";
+import type { DeckCardDetail } from "../../common/types/card";
 
 export type Deck = {
   id: number;
@@ -13,13 +13,4 @@ export type DeckCard = {
   position: number;
 };
 
-// フロントエンドで使う結合型
-export type OwnedCardWithDetail = UserCard & {
-  card: Card;
-};
-
-export type DeckCardDetail = {
-  position: number;
-  user_card_id: number;
-  card: Card;
-};
+export type { DeckCardDetail };
