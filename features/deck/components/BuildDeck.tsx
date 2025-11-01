@@ -7,6 +7,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import type { Card } from "../../common/types/card";
+import type { Rarity } from "../../common/types/rarity";
 import { OwnedCardWithDetail } from "../types/deck";
 import { CardSearchButton } from "./CardSearchButton";
 import { CardSortButton, SortOption } from "./CardSortButton";
@@ -33,12 +35,7 @@ export default function BuildDeck() {
     Array<{
       position: number;
       user_card_id: string;
-      card: {
-        id: string;
-        name: string;
-        rarity: string;
-        card_number: string;
-      };
+      card: Card;
     }>
   >([]);
   const [localOwnedCards, setLocalOwnedCards] = useState<OwnedCardWithDetail[]>([]);
@@ -57,7 +54,7 @@ export default function BuildDeck() {
           card: {
             id: String(card.card._id),
             name: card.card.text,
-            rarity: card.card.rarity,
+            rarity: card.card.rarity as Rarity,
             card_number: card.card.card_number,
           },
         }));
@@ -83,7 +80,7 @@ export default function BuildDeck() {
             card: {
               id: String(card.card._id),
               name: card.card.text,
-              rarity: card.card.rarity,
+              rarity: card.card.rarity as Rarity,
               card_number: card.card.card_number,
             },
           }))
@@ -230,7 +227,10 @@ export default function BuildDeck() {
       card_id: selectedDeckCard.card.id,
       is_locked: false,
       quantity: 1,
-      card: selectedDeckCard.card,
+      card: {
+        ...selectedDeckCard.card,
+        rarity: selectedDeckCard.card.rarity as Rarity,
+      },
     };
 
     setLocalDeck(updatedDeck);

@@ -1,4 +1,4 @@
-import type { DeckCardDetail } from "../../common/types/card";
+import type { DeckCardDetail, OwnedCardWithDetail } from "../../common/types/card";
 
 export type Deck = {
   id: number;
@@ -13,4 +13,4 @@ export type DeckCard = {
   position: number;
 };
 
-export type { DeckCardDetail };
+export type { DeckCardDetail, OwnedCardWithDetail };
