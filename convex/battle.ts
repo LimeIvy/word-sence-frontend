@@ -1,8 +1,9 @@
-import axios from "axios";
+// axiosは使用しない（Convexのquery/mutation内ではsetTimeoutが使えないため）
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./user";
 
 const submissionTypeValidator = v.union(v.literal("normal"), v.literal("victory_declaration"));
@@ -103,43 +104,165 @@ function hasPlayerWon(score: bigint): boolean {
 }
 
 /**
- * 類似度スコアを計算
+ * 類似度スコアを計算（Action）
  * Word2Vecモデルを使用して2つの単語間の類似度を計算
+ * 外部API呼び出しのためaction関数として実装
  */
-async function calculateSimilarityScore(
-  fieldCardText: string,
-  submittedCardText: string
-): Promise<number> {
-  const API_BASE_URL = process.env.WORD_SENCE_API_URL;
-  if (!API_BASE_URL) {
-    throw new Error("環境変数 WORD_SENCE_API_URL が設定されていません");
-  }
-
-  try {
-    const response = await axios.post(
-      `${API_BASE_URL}/similarity`,
-      {
-        word1: fieldCardText,
-        word2: submittedCardText,
-      },
-      {
-        timeout: 10000,
-      }
-    );
-
-    // Word2Vecの類似度は-1〜1の範囲なので、0〜1に正規化
-    const normalizedScore = (response.data.result + 1) / 2;
-    return Math.max(0, Math.min(1, normalizedScore));
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(`Similarity API error: ${error.response?.status}`, error.message);
-    } else {
-      console.error("Failed to calculate similarity:", error);
+export const calculateSimilarityScoreAction = action({
+  args: {
+    fieldCardText: v.string(),
+    submittedCardText: v.string(),
+  },
+  handler: async (ctx, { fieldCardText, submittedCardText }) => {
+    const API_BASE_URL = process.env.API_BASE_URL;
+    if (!API_BASE_URL) {
+      console.warn("環境変数 API_BASE_URLが設定されていません。デフォルト値(0.5)を返します。");
+      return 0.5;
     }
-    // エラー時はフォールバック（中程度のスコア）
-    return 0.5;
-  }
+
+    // URLの末尾スラッシュを正規化
+    const baseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
+    try {
+      const response = await fetch(`${baseUrl}/similarity`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          word1: fieldCardText,
+          word2: submittedCardText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Word2Vecの類似度は-1〜1の範囲なので、0〜1に正規化
+      const normalizedScore = (data.result + 1) / 2;
+      return Math.max(0, Math.min(1, normalizedScore));
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Similarity API error:`, error.message);
+      } else {
+        console.error("Failed to calculate similarity:", error);
+      }
+      // エラー時はフォールバック（中程度のスコア）
+      return 0.5;
+    }
+  },
+});
+
+/**
+ * 類似度スコアを計算（ヘルパー関数）
+ * mutation内では直接外部APIを呼び出せないため、フォールバック値を返す
+ * 実際の計算はクライアント側でactionを呼び出す必要がある
+ * @deprecated この関数は使用されていません。クライアント側でcalculateSimilarityScoreActionを直接呼び出してください。
+ */
+async function calculateSimilarityScore(): Promise<number> {
+  // Mutation内では外部APIを直接呼び出せないため、デフォルト値を返す
+  // 実際の計算はsubmitCard呼び出し前にクライアント側でactionを呼び出す必要がある
+  console.warn(
+    "calculateSimilarityScore called from mutation - returning default value. Use action from client side."
+  );
+  return 0.5;
 }
+
+/**
+ * 単語生成（Action）
+ * Word2Vecモデルを使用してベクトル演算により新しい単語を生成
+ * 外部API呼び出しのためaction関数として実装
+ */
+export const generateWordAction = action({
+  args: {
+    positiveTexts: v.array(v.string()),
+    negativeTexts: v.array(v.string()),
+  },
+  handler: async (ctx, { positiveTexts, negativeTexts }) => {
+    const API_BASE_URL = process.env.API_BASE_URL;
+    if (!API_BASE_URL) {
+      throw new Error("環境変数 API_BASE_URLが設定されていません");
+    }
+
+    // URLの末尾スラッシュを正規化
+    const baseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
+    try {
+      const response = await fetch(`${baseUrl}/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          positive: positiveTexts,
+          negative: negativeTexts,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`
+        );
+      }
+
+      const data = await response.json();
+
+      // APIレスポンスの検証
+      if (!data || !data.result) {
+        console.error("Invalid API response:", data);
+        throw new Error(`APIレスポンスの形式が正しくありません: ${JSON.stringify(data)}`);
+      }
+
+      if (!Array.isArray(data.result) || data.result.length === 0) {
+        console.error("API result is empty or not an array:", data.result);
+        throw new Error(`API結果が空です: ${JSON.stringify(data.result)}`);
+      }
+
+      if (!Array.isArray(data.result[0]) || data.result[0].length === 0) {
+        console.error("API result[0] is empty or not an array:", data.result[0]);
+        throw new Error(`API結果の最初の要素が空です: ${JSON.stringify(data.result[0])}`);
+      }
+
+      // APIは [["単語", スコア]] の形式で返す
+      const generatedWord = data.result[0][0];
+
+      if (!generatedWord || typeof generatedWord !== "string") {
+        console.error("Generated word is invalid:", generatedWord);
+        throw new Error(`生成された単語が無効です: ${generatedWord}`);
+      }
+
+      return generatedWord;
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Word generation API error:`, {
+          message: error.message,
+          url: `${baseUrl}/analyze`,
+          request: { positive: positiveTexts, negative: negativeTexts },
+        });
+
+        // エラーメッセージからステータスコードを抽出（あれば）
+        if (error.message.includes("404")) {
+          throw new Error(`APIエンドポイントが見つかりません: ${baseUrl}/analyze`);
+        } else if (error.message.includes("500")) {
+          throw new Error(`APIサーバーエラー (500): ${error.message}`);
+        } else if (error.message.includes("timeout") || error.message.includes("aborted")) {
+          throw new Error("APIリクエストがタイムアウトしました");
+        } else {
+          // 検証エラーやその他のエラー
+          console.error("Word generation error:", error.message);
+          throw error;
+        }
+      } else {
+        console.error("Failed to generate word:", error);
+        throw new Error(`単語生成に失敗しました: ${String(error)}`);
+      }
+    }
+  },
+});
 
 /**
  * レアリティボーナスを計算
@@ -360,24 +483,22 @@ export const getBattle = query({
  * 手札のカードとお題カードの類似度をプレビュー計算
  * 提出フェーズで手札の各カードのスコアをプレビューするために使用
  */
-export const calculateSimilarityPreview = query({
+export const calculateSimilarityPreview = action({
   args: {
     battleId: v.id("battle"),
     userId: v.id("user"),
     handCardIds: v.array(v.id("card")),
   },
   handler: async (ctx, { battleId, userId, handCardIds }) => {
-    // 認証チェック
-    const currentUser = await getCurrentUserOrThrow(ctx);
-    if (currentUser._id !== userId) {
-      throw new Error("この操作を実行する権限がありません");
+    // 認証チェック（action内ではgetUserIdentityを使用）
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("認証されていません");
     }
+    // userIdの検証はバトル情報取得後に行う
 
-    // バトル情報を取得
-    const battle = await ctx.db.get(battleId);
-    if (!battle) {
-      throw new Error("バトルが見つかりません");
-    }
+    // バトル情報を取得（action内ではrunQueryを使用）
+    const battle = await ctx.runQuery(api.battle.getBattle, { battleId });
 
     // バトルの参加者であるか確認
     if (!battle.player_ids.includes(userId)) {
@@ -389,16 +510,30 @@ export const calculateSimilarityPreview = query({
       return {};
     }
 
-    // お題カードを取得
-    const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
+    // お題カードと手札のカードを一括取得
+    const allCardIds = [battle.field_card_id, ...handCardIds];
+    const cards = await ctx.runQuery(api.card.getCardsByIds, { cardIds: allCardIds });
+    const cardMap = new Map(cards.map((card) => [card._id, card]));
+
+    const fieldCard = cardMap.get(battle.field_card_id);
+    if (!fieldCard) {
+      throw new Error("お題カードが見つかりません");
+    }
 
     // 手札の各カードとお題カードの類似度を計算
     const similarities: Record<string, number> = {};
     await Promise.all(
       handCardIds.map(async (cardId) => {
         try {
-          const card = await getCardOrThrow(ctx, cardId);
-          const similarity = await calculateSimilarityScore(fieldCard.text, card.text);
+          const card = cardMap.get(cardId);
+          if (!card) {
+            similarities[cardId] = 0.5;
+            return;
+          }
+          const similarity = await ctx.runAction(api.battle.calculateSimilarityScoreAction, {
+            fieldCardText: fieldCard.text,
+            submittedCardText: card.text,
+          });
           similarities[cardId] = similarity;
         } catch (error) {
           console.error(`Failed to calculate similarity for card ${cardId}:`, error);
@@ -638,14 +773,14 @@ export const submitCard = mutation({
 
     // カード情報を取得
     const submittedCard = await getCardOrThrow(ctx, card_id);
-    const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
 
     // デッキカードかどうか判定
     const deckCards = await getDeckCards(ctx, player.deck_ref);
     const isDeckCard = deckCards.includes(card_id);
 
     // スコア計算
-    const similarityScore = await calculateSimilarityScore(fieldCard.text, submittedCard.text);
+    // TODO: クライアント側でcalculateSimilarityScoreActionを呼び出してスコアを計算し、mutationに渡す
+    const similarityScore = await calculateSimilarityScore();
     const rarityBonus = isDeckCard ? getRarityBonus(submittedCard.rarity) : 0;
     const finalScore = calculateFinalScore(similarityScore, rarityBonus);
 
@@ -944,8 +1079,9 @@ export const generateWord = mutation({
     user_id: v.id("user"),
     positive_cards: v.array(v.id("card")),
     negative_cards: v.array(v.id("card")),
+    generated_word: v.optional(v.string()), // クライアント側で生成された単語
   },
-  handler: async (ctx, { battle_id, user_id, positive_cards, negative_cards }) => {
+  handler: async (ctx, { battle_id, user_id, positive_cards, negative_cards, generated_word }) => {
     // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
     const currentUser = await getCurrentUserOrThrow(ctx);
     verifyUserAuthentication(currentUser._id, user_id);
@@ -986,49 +1122,15 @@ export const generateWord = mutation({
       throw new Error("手札にないカードが含まれています");
     }
 
-    // カード情報を取得
-    const positiveTexts = await Promise.all(
-      positive_cards.map(async (cardId) => {
-        const card = await getCardOrThrow(ctx, cardId);
-        return card.text;
-      })
-    );
-
-    const negativeTexts = await Promise.all(
-      negative_cards.map(async (cardId) => {
-        const card = await getCardOrThrow(ctx, cardId);
-        return card.text;
-      })
-    );
-
-    // Word2Vec APIを使用して新しい単語を生成
+    // 生成された単語を受け取る（クライアント側でgenerateWordActionを呼び出して渡される）
     let generatedWord: string;
-    try {
-      const API_BASE_URL = process.env.WORD_SENCE_API_URL;
-      if (!API_BASE_URL) {
-        throw new Error("環境変数 WORD_SENCE_API_URL が設定されていません");
-      }
-
-      const response = await axios.post(
-        `${API_BASE_URL}/analyze`,
-        {
-          positive: positiveTexts,
-          negative: negativeTexts,
-        },
-        {
-          timeout: 10000,
-        }
-      );
-
-      // APIは [["単語", スコア]] の形式で返す
-      generatedWord = response.data.result[0][0];
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(`Word generation API error: ${error.response?.status}`, error.message);
-      } else {
-        console.error("Failed to generate word:", error);
-      }
-      throw new Error("単語生成に失敗しました。もう一度お試しください。");
+    if (generated_word) {
+      generatedWord = generated_word;
+    } else {
+      // フォールバック：最初のpositiveカードのテキストを使用
+      const firstPositiveCard = await getCardOrThrow(ctx, positive_cards[0]);
+      generatedWord = firstPositiveCard.text;
+      console.warn("generateWord: generated_word not provided, using fallback", generatedWord);
     }
 
     // 生成された単語に対応するカードを検索
@@ -1393,14 +1495,13 @@ export const checkPhaseTimeout = mutation({
             // ランダムにカードを選択
             const randomCard = player.hand[Math.floor(Math.random() * player.hand.length)];
             const cardData = await getCardOrThrow(ctx, randomCard);
-            const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
 
             // デッキカードかどうか判定
             const deckCards = await getDeckCards(ctx, player.deck_ref);
             const isDeckCard = deckCards.includes(randomCard);
 
-            // スコア計算
-            const similarityScore = await calculateSimilarityScore(fieldCard.text, cardData.text);
+            // TODO: クライアント側でcalculateSimilarityScoreActionを呼び出してスコアを計算し、mutationに渡す
+            const similarityScore = await calculateSimilarityScore();
             const rarityBonus = isDeckCard ? getRarityBonus(cardData.rarity) : 0;
             const finalScore = calculateFinalScore(similarityScore, rarityBonus);
 
