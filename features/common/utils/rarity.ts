@@ -77,5 +77,5 @@ export function compareRarity(rarity1: Rarity, rarity2: Rarity): number {
  * レアリティが有効かチェック
  */
 export function isValidRarity(rarity: string): rarity is Rarity {
-  return rarity in RARITY_CONFIGS;
+  return Object.hasOwn(RARITY_CONFIGS, rarity);
 }
