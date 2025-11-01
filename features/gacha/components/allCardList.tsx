@@ -92,7 +92,7 @@ export default function AllCardList() {
             <DialogDescription asChild>
               <Tabs
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={(value) => setActiveTab(value as "並" | "良" | "優" | "傑" | "極")}
                 className=" mt-5 flex items-center gap-5"
               >
                 <TabsList>
