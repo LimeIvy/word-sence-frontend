@@ -13,6 +13,7 @@ import type * as card from "../card.js";
 import type * as deck from "../deck.js";
 import type * as http from "../http.js";
 import type * as market from "../market.js";
+import type * as room from "../room.js";
 import type * as user from "../user.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   deck: typeof deck;
   http: typeof http;
   market: typeof market;
+  room: typeof room;
   user: typeof user;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

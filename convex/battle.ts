@@ -2,7 +2,7 @@ import axios from "axios";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./user";
 
 const submissionTypeValidator = v.union(v.literal("normal"), v.literal("victory_declaration"));
@@ -372,64 +372,81 @@ export const getUserBattles = query({
 });
 
 /**
- * 類似度プレビューを取得
- * お題カードと手札カードの類似度を計算して返す
+ * バトルを作成（内部用：認証チェックなし）
  */
-export const calculateSimilarityPreview = query({
+export const createBattleInternal = internalMutation({
   args: {
-    battleId: v.id("battle"),
-    userId: v.id("user"),
-    handCardIds: v.array(v.id("card")),
+    player_ids: v.array(v.id("user")),
+    deck_ids: v.array(v.id("deck")),
   },
-  handler: async (ctx, { battleId, userId, handCardIds }) => {
-    // 認証チェック
-    const currentUser = await getCurrentUserOrThrow(ctx);
-    if (currentUser._id !== userId) {
-      throw new Error("自分のユーザーIDのみ指定できます");
+  handler: async (ctx, { player_ids, deck_ids }) => {
+    // 入力検証
+    if (player_ids.length !== deck_ids.length) {
+      throw new Error("プレイヤーIDとデッキIDの長さが一致しません");
+    }
+    if (player_ids.length !== 2) {
+      throw new Error("現在は2人のプレイヤーのみ対戦可能です");
     }
 
-    // バトル情報を取得
-    const battle = await ctx.db.get(battleId);
-    if (!battle) {
-      throw new Error("バトルが見つかりません");
+    // デッキ所有権の検証：各デッキが対応するプレイヤーのものであることを確認
+    for (let i = 0; i < player_ids.length; i++) {
+      await verifyDeckOwnership(ctx, deck_ids[i], player_ids[i]);
     }
 
-    // 参加者チェック
-    if (!battle.player_ids.includes(userId)) {
-      throw new Error("このバトルの参加者のみが類似度を取得できます");
-    }
+    // お題カードをランダムに選択
+    const fieldCardId = await getRandomFieldCard(ctx);
 
-    // フェーズチェック（提出フェーズでのみ使用可能）
-    if (battle.current_phase !== "word_submission") {
-      throw new Error("類似度プレビューは提出フェーズでのみ使用可能です");
-    }
+    // 各プレイヤーの初期状態を作成
+    const players = await Promise.all(
+      player_ids.map(async (userId, index) => {
+        const deckId = deck_ids[index];
+        const deckCards = await getDeckCards(ctx, deckId);
 
-    // お題カードを取得
-    const fieldCard = await getCardOrThrow(ctx, battle.field_card_id);
-    const fieldCardText = fieldCard.text;
+        // デッキサイズの検証
+        if (deckCards.length < 5) {
+          throw new Error(`デッキ${index + 1}には最低5枚のカードが必要です`);
+        }
 
-    // 手札カードの情報を取得
-    const handCards = await Promise.all(
-      handCardIds.map(async (cardId) => {
-        const card = await getCardOrThrow(ctx, cardId);
-        return { cardId, text: card.text };
+        // 手札を5枚配る
+        const hand = deckCards.slice(0, 5);
+        const remainingDeck = deckCards.slice(5);
+
+        return {
+          user_id: userId,
+          score: 0n,
+          hand,
+          deck_ref: deckId,
+          turn_state: {
+            actions_remaining: 3n,
+            actions_log: [],
+            deck_cards_remaining: BigInt(remainingDeck.length),
+          },
+          submitted_card: undefined,
+          is_ready: false,
+          is_connected: true,
+          last_action_time: Date.now(),
+        };
       })
     );
 
-    // 各手札カードの類似度を計算
-    const similarities: Record<string, number> = {};
-    for (const handCard of handCards) {
-      try {
-        const similarity = await calculateSimilarityScore(fieldCardText, handCard.text);
-        similarities[handCard.cardId] = similarity;
-      } catch (error) {
-        console.error(`Failed to calculate similarity for card ${handCard.cardId}:`, error);
-        // エラー時はフォールバック値を設定
-        similarities[handCard.cardId] = 0.5;
-      }
-    }
+    // バトルを作成
+    const now = Date.now();
+    const battleId = await ctx.db.insert("battle", {
+      player_ids,
+      game_status: "active",
+      winner_ids: undefined,
+      current_round: 1n,
+      current_phase: "field_card_presentation",
+      field_card_id: fieldCardId,
+      players,
+      phase_start_time: now,
+      responses: undefined,
+      round_results: [],
+      created_at: now,
+      updated_at: now,
+    });
 
-    return similarities;
+    return { battleId };
   },
 });
 

@@ -193,6 +193,7 @@ export default defineSchema({
     host_id: v.id("user"), // ルーム作成者
     is_active: v.boolean(), // 待機中か対戦中か
     battle_id: v.optional(v.id("battle")),
+    player_decks: v.optional(v.any()), // プレイヤーのデッキ選択 Record<userId, deckId>
   })
     .index("by_code", ["room_code"])
     .index("by_host", ["host_id"]),
