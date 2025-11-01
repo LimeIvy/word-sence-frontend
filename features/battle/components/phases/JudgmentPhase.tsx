@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Card } from "../../../common/types/card";
 import type { PointsAwarded, RoundResult } from "../../types/battle";
 import type { TurnState } from "../../types/player";
@@ -49,6 +49,13 @@ export function JudgmentPhase({
   const myPoints = roundResult.points_awarded.find((p) => p.user_id === myUserId);
   const opponentPoints = roundResult.points_awarded.find((p) => p.user_id !== myUserId);
 
+  // onAnimationCompleteの最新の参照をrefに保存
+  const onAnimationCompleteRef = useRef(onAnimationComplete);
+  useEffect(() => {
+    onAnimationCompleteRef.current = onAnimationComplete;
+  }, [onAnimationComplete]);
+
+  // タイマーは一度だけ実行される（依存配列が空）
   useEffect(() => {
     // スコア表示アニメーション（2秒）
     const timer1 = setTimeout(() => {
@@ -58,14 +65,14 @@ export function JudgmentPhase({
     // ポイント付与演出（3秒）
     const timer2 = setTimeout(() => {
       setAnimationPhase("complete");
-      onAnimationComplete?.();
+      onAnimationCompleteRef.current?.();
     }, 5000);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, [onAnimationComplete]);
+  }, []);
 
   const getPointsDisplayText = (points: PointsAwarded | undefined): string => {
     if (!points) return "+0";

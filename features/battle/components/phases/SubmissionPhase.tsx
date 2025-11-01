@@ -64,10 +64,7 @@ export function SubmissionPhase({
   const similarity = selectedCardId ? similarities[selectedCardId] : undefined;
   const rarityBonus = selectedCardId ? rarityBonuses[selectedCardId] : undefined;
   const finalScore =
-    similarity !== undefined && rarityBonus !== undefined
-      ? Math.min(1.0, similarity + rarityBonus)
-      : similarity;
-
+    similarity !== undefined ? Math.min(1.0, similarity + (rarityBonus ?? 0)) : undefined;
   return (
     <div className={`flex flex-col gap-6 ${className}`}>
       {/* 上部: 相手の手札 */}
