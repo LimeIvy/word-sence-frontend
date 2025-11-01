@@ -21,7 +21,7 @@ export interface BattleResultModalProps {
   /** バトル情報 */
   battle: Battle;
   /** 自分のユーザーID */
-  myUserId: string;
+  myUserId: Id<"user">;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
@@ -45,7 +45,7 @@ export function BattleResultModal({
   const myPlayer = battle.players.find((p) => p.user_id === myUserId);
   const opponentPlayer = battle.players.find((p) => p.user_id !== myUserId);
 
-  const isWinner = battle.winner_ids?.includes(myUserId as Id<"user">) ?? false;
+  const isWinner = battle.winner_ids?.includes(myUserId) ?? false;
   const isDraw = battle.winner_ids === undefined || battle.winner_ids.length === 0;
 
   const handleGoHome = () => {

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowRight, CheckCircle2, Trophy, XCircle } from "lucide-react";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import type { RoundResult } from "../../types/battle";
 import { getPointReasonText } from "../../utils/score-calculator";
 
@@ -21,7 +22,7 @@ export interface RoundResultModalProps {
   /** ラウンド結果 */
   roundResult: RoundResult;
   /** 自分のユーザーID */
-  myUserId: string;
+  myUserId: Id<"user">;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
