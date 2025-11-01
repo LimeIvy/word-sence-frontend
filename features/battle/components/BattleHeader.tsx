@@ -94,7 +94,7 @@ export function BattleHeader({
               }}
             >
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-xl">👤</span>
+                <span className="text-xl select-none">👤</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-blue-100/90 mb-0.5 truncate">{myName}</div>
@@ -141,7 +141,7 @@ export function BattleHeader({
                 </div>
               </div>
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-xl">👤</span>
+                <span className="text-xl select-none">👤</span>
               </div>
             </div>
           </div>

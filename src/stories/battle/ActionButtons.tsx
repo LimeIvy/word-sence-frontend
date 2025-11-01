@@ -29,12 +29,12 @@ export const ActionButtons = ({
   return (
     <div className={`w-full ${className}`}>
       {/* アクションボタン群 */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {/* カード交換ボタン */}
         <button
           onClick={onExchange}
           disabled={exchangeDisabled}
-          className="relative group flex items-center justify-between px-6 py-4 rounded-xl font-bold text-lg transition-all duration-200 overflow-hidden"
+          className="relative group flex items-center justify-between px-4 py-2.5 rounded-lg font-bold text-base transition-all duration-200 overflow-hidden"
           style={{
             background: exchangeDisabled
               ? "linear-gradient(135deg, rgba(75,75,75,0.9), rgba(50,50,50,0.9))"
@@ -84,11 +84,12 @@ export const ActionButtons = ({
             }}
           />
 
-          <div className="flex items-center gap-3 relative z-10">
-            <span className="text-2xl">🔄</span>
+          <div className="flex items-center gap-2 relative z-10">
+            <span className="text-xl">🔄</span>
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <span
+                  className="select-none"
                   style={{
                     color: "#FFF5E6",
                     textShadow: "0 1px 2px rgba(0,0,0,0.5)",
@@ -98,7 +99,7 @@ export const ActionButtons = ({
                 </span>
               </div>
               <span
-                className="text-xs font-normal"
+                className="text-xs font-normal select-none"
                 style={{
                   color: "rgba(255,245,230,0.7)",
                   textShadow: "0 1px 1px rgba(0,0,0,0.5)",
@@ -119,7 +120,7 @@ export const ActionButtons = ({
             >
               <span className="text-sm">🎴</span>
               <span
-                className="text-sm font-bold"
+                className="text-sm font-bold select-none"
                 style={{
                   color: "#FFF5E6",
                   textShadow: "0 1px 1px rgba(0,0,0,0.5)",
@@ -135,7 +136,7 @@ export const ActionButtons = ({
         <button
           onClick={onGenerate}
           disabled={generateDisabled}
-          className="relative group flex items-center justify-between px-6 py-4 rounded-xl font-bold text-lg transition-all duration-200 overflow-hidden"
+          className="relative group flex items-center justify-between px-4 py-2.5 rounded-lg font-bold text-base transition-all duration-200 overflow-hidden"
           style={{
             background: generateDisabled
               ? "linear-gradient(135deg, rgba(75,75,75,0.9), rgba(50,50,50,0.9))"
@@ -185,11 +186,12 @@ export const ActionButtons = ({
             }}
           />
 
-          <div className="flex items-center gap-3 relative z-10">
-            <span className="text-2xl">⚗️</span>
+          <div className="flex items-center gap-2 relative z-10">
+            <span className="text-xl">⚗️</span>
             <div className="text-left">
               <div className="flex items-center gap-2">
                 <span
+                  className="select-none"
                   style={{
                     color: "#FFF5E6",
                     textShadow: "0 1px 2px rgba(0,0,0,0.5)",
@@ -199,7 +201,7 @@ export const ActionButtons = ({
                 </span>
               </div>
               <span
-                className="text-xs font-normal"
+                className="text-xs font-normal select-none"
                 style={{
                   color: "rgba(255,245,230,0.7)",
                   textShadow: "0 1px 1px rgba(0,0,0,0.5)",
@@ -236,7 +238,7 @@ export const ActionButtons = ({
           <button
             onClick={onReady}
             disabled={readyDisabled}
-            className="relative w-full flex items-center justify-center gap-3 px-6 py-5 rounded-xl font-black text-xl transition-all duration-200 overflow-hidden"
+            className="relative w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-black text-lg transition-all duration-200 overflow-hidden"
             style={{
               background: readyDisabled
                 ? "linear-gradient(135deg, rgba(75,75,75,0.9), rgba(50,50,50,0.9))"
@@ -290,9 +292,9 @@ export const ActionButtons = ({
             <div className="absolute top-2 left-2 text-lg opacity-30">🌸</div>
             <div className="absolute top-2 right-2 text-lg opacity-30">🌸</div>
 
-            <span className="text-3xl relative z-10">✅</span>
+            <span className="text-2xl relative z-10">✅</span>
             <span
-              className="relative z-10"
+              className="relative z-10 select-none"
               style={{
                 color: "#FFF5E6",
                 textShadow: "0 2px 4px rgba(0,0,0,0.6)",

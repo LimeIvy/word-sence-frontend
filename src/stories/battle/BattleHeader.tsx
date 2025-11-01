@@ -63,7 +63,7 @@ export const BattleHeader = ({
   };
 
   return (
-    <div className={`w-full relative rounded-2xl ${className}`}>
+    <div className={`w-full max-w-xl md:max-w-2xl lg:max-w-4xl relative rounded-2xl ${className}`}>
       {/* 和風背景 */}
       <div
         className="absolute inset-0 rounded-2xl"
@@ -112,23 +112,23 @@ export const BattleHeader = ({
       <div className="absolute bottom-3 right-3 text-lg opacity-20">🌸</div>
 
       {/* メインコンテンツ */}
-      <div className="relative p-6">
+      <div className="relative p-3">
         {/* 上部：プレイヤー情報とスコア */}
-        <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="flex items-center justify-between mb-2 gap-3">
           {/* プレイヤー1 */}
-          <div className="flex items-center gap-3 flex-shrink min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-shrink min-w-0 flex-1">
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, rgba(218,165,32,0.9), rgba(184,134,11,0.8))",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2)",
               }}
             >
-              <span className="text-white text-lg">👤</span>
+              <span className="text-white text-base">👤</span>
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span
-                className="text-xs font-medium"
+                className="text-xs font-medium select-none"
                 style={{
                   color: "rgba(139,69,19,0.7)",
                   textShadow: "0 1px 1px rgba(255,255,255,0.3)",
@@ -137,7 +137,7 @@ export const BattleHeader = ({
                 相手
               </span>
               <span
-                className="text-lg font-bold truncate"
+                className="text-base font-bold truncate select-none"
                 style={{
                   color: "#654321",
                   textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -153,7 +153,7 @@ export const BattleHeader = ({
 
           {/* ラウンド表示 */}
           <div
-            className="flex flex-col items-center px-6 py-3 rounded-lg flex-shrink-0"
+            className="flex flex-col items-center px-4 py-2 rounded-lg flex-shrink-0"
             style={{
               background: "linear-gradient(135deg, rgba(139,69,19,0.95), rgba(101,67,33,0.9))",
               border: "2px solid rgba(218,165,32,0.6)",
@@ -161,7 +161,7 @@ export const BattleHeader = ({
             }}
           >
             <span
-              className="text-xs font-medium tracking-wider"
+              className="text-xs font-medium tracking-wider select-none"
               style={{
                 color: "rgba(255,245,230,0.7)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
@@ -170,7 +170,7 @@ export const BattleHeader = ({
               第
             </span>
             <span
-              className="text-4xl font-black"
+              className="text-3xl font-black select-none"
               style={{
                 color: "#FFF5E6",
                 textShadow: "0 2px 4px rgba(0,0,0,0.5)",
@@ -179,7 +179,7 @@ export const BattleHeader = ({
               {currentRound}
             </span>
             <span
-              className="text-xs font-medium tracking-wider"
+              className="text-xs font-medium tracking-wider select-none"
               style={{
                 color: "rgba(255,245,230,0.7)",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
@@ -190,11 +190,11 @@ export const BattleHeader = ({
           </div>
 
           {/* プレイヤー2 */}
-          <div className="flex items-center gap-3 flex-shrink min-w-0 flex-1 justify-end">
+          <div className="flex items-center gap-2 flex-shrink min-w-0 flex-1 justify-end">
             <div className="flex-shrink-0">{renderScoreDots(player2Score)}</div>
             <div className="flex flex-col items-end min-w-0 flex-1">
               <span
-                className="text-xs font-medium"
+                className="text-xs font-medium select-none"
                 style={{
                   color: "rgba(139,69,19,0.7)",
                   textShadow: "0 1px 1px rgba(255,255,255,0.3)",
@@ -203,7 +203,7 @@ export const BattleHeader = ({
                 あなた
               </span>
               <span
-                className="text-lg font-bold truncate text-right w-full"
+                className="text-base font-bold truncate text-right w-full select-none"
                 style={{
                   color: "#654321",
                   textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -215,13 +215,13 @@ export const BattleHeader = ({
               </span>
             </div>
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, rgba(218,165,32,0.9), rgba(184,134,11,0.8))",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2)",
               }}
             >
-              <span className="text-white text-lg">👤</span>
+              <span className="text-white text-base">👤</span>
             </div>
           </div>
         </div>
@@ -229,16 +229,16 @@ export const BattleHeader = ({
         {/* 中部：フェーズ表示 */}
         <div>
           <div
-            className="flex items-center justify-center gap-3 py-2 px-4 rounded-full mx-auto w-fit"
+            className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-full mx-auto w-fit"
             style={{
               background: "linear-gradient(135deg, rgba(139,69,19,0.8), rgba(101,67,33,0.75))",
               border: "1px solid rgba(218,165,32,0.5)",
               boxShadow: "0 2px 4px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,245,230,0.15)",
             }}
           >
-            <span className="text-base">📜</span>
+            <span className="text-sm">📜</span>
             <span
-              className="text-sm font-semibold tracking-wide"
+              className="text-xs font-semibold tracking-wide select-none"
               style={{
                 color: "#FFF5E6",
                 textShadow: "0 1px 2px rgba(0,0,0,0.5)",
