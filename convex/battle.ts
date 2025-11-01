@@ -37,6 +37,9 @@ async function getDeckCards(
  */
 async function getRandomFieldCard(ctx: MutationCtx): Promise<Id<"card">> {
   const allCards = await ctx.db.query("card").collect();
+  if (allCards.length === 0) {
+    throw new Error("カードが登録されていません");
+  }
   const randomIndex = Math.floor(Math.random() * allCards.length);
   return allCards[randomIndex]._id;
 }
@@ -341,9 +344,13 @@ function isPhaseTimedOut(
 export const getBattle = query({
   args: { battleId: v.id("battle") },
   handler: async (ctx, { battleId }) => {
+    const currentUser = await getCurrentUserOrThrow(ctx);
     const battle = await ctx.db.get(battleId);
     if (!battle) {
       throw new Error("バトルが見つかりません");
+    }
+    if (!battle.player_ids.includes(currentUser._id)) {
+      throw new Error("このバトルの参加者のみがバトル情報を取得できます");
     }
     return battle;
   },
@@ -740,6 +747,9 @@ export const exchangeCards = mutation({
     } else {
       // プールからランダムドロー
       const allCards = await ctx.db.query("card").collect();
+      if (allCards.length < discard_card_ids.length) {
+        throw new Error("プールに十分なカードがありません");
+      }
       const cardIds = allCards.map((c) => c._id);
       // カードをシャッフル
       for (let i = cardIds.length - 1; i > 0; i--) {
