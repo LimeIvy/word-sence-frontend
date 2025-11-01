@@ -27,36 +27,49 @@ export const WordCard = ({
         textSize: showVertical ? "10px" : "12px",
         raritySize: "11px",
         letterSpacing: showVertical ? "0.1em" : "1.5px",
+        badgeSize: "w-6 h-6",
       }
     : (() => {
         if (className.includes("w-20"))
           return {
             textSize: showVertical ? "10px" : "12px",
-            raritySize: "11px",
+            raritySize: "9px",
             letterSpacing: showVertical ? "1px" : "1.5px",
+            badgeSize: "w-8 h-8",
           };
         if (className.includes("w-24"))
           return {
             textSize: showVertical ? "13px" : "15px",
-            raritySize: "13px",
+            raritySize: "11px",
             letterSpacing: showVertical ? "1.5px" : "2px",
+            badgeSize: "w-10 h-10",
           };
-        if (className.includes("w-30"))
+        if (className.includes("w-28"))
           return {
             textSize: showVertical ? "15px" : "17px",
-            raritySize: "15px",
+            raritySize: "13px",
             letterSpacing: showVertical ? "1.2px" : "1.8px",
+            badgeSize: "w-12 h-12",
+          };
+        if (className.includes("w-32"))
+          return {
+            textSize: showVertical ? "18px" : "20px",
+            raritySize: "15px",
+            letterSpacing: showVertical ? "1.5px" : "2px",
+            badgeSize: "w-12 h-12",
           };
         if (className.includes("w-36"))
           return {
             textSize: showVertical ? "18px" : "20px",
-            raritySize: "18px",
+            raritySize: "15px",
             letterSpacing: showVertical ? "1.5px" : "2px",
+            badgeSize: "w-14 h-14",
           };
         return {
           textSize: showVertical ? "22px" : "24px",
-          raritySize: "15px",
+          raritySize: "18px",
           letterSpacing: showVertical ? "2px" : "3px",
+          badgeSize: "w-12 h-12",
         };
       })();
 
@@ -281,7 +294,7 @@ export const WordCard = ({
           {/* レアリティ印章 */}
           <div
             aria-label={`レアリティ: ${rarity}`}
-            className="absolute top-1 right-1 flex items-center justify-center font-black w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14"
+            className={`absolute top-1 right-1 flex items-center justify-center font-black ${fontSizes.badgeSize}`}
             style={{
               position: "relative",
             }}
@@ -307,8 +320,11 @@ export const WordCard = ({
 
             {/* 中央の文字 */}
             <div
-              className="absolute inset-0 flex items-center justify-center text-white font-black z-10 text-xs sm:text-sm md:text-base lg:text-lg"
-              style={{ textShadow }}
+              className="absolute inset-0 flex items-center justify-center text-white font-black z-10"
+              style={{
+                textShadow,
+                fontSize: fontSizes.raritySize,
+              }}
             >
               {colors.name}
             </div>
