@@ -43,6 +43,8 @@ export interface UseBattleReturn {
   isDeckCards: Record<string, boolean>;
   /** レアリティボーナスマップ */
   rarityBonuses: Record<string, number>;
+  /** 類似度マップ（提出フェーズでのみ使用） */
+  similarities: Record<string, number>;
   /** カードマップ */
   cardMap: Map<Id<"card">, Doc<"card">>;
   /** カード交換 */
@@ -113,6 +115,25 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
   const deckCardIds = useQuery(
     api.deck.getUserDeckCards,
     battle && myPlayerState ? { userId: myUserId, deckId: myPlayerState.deck_ref } : "skip"
+  );
+
+  // 類似度プレビューを取得（提出フェーズでのみ）
+  const handCardIdsForPreview = useMemo(() => {
+    if (!battle || battle.current_phase !== "word_submission" || !myPlayerState) {
+      return [];
+    }
+    return myPlayerState.hand;
+  }, [battle?.current_phase, myPlayerState]);
+
+  const similarityPreview = useQuery(
+    api.battle.calculateSimilarityPreview,
+    battle && myPlayerState && handCardIdsForPreview.length > 0
+      ? {
+          battleId: battleId,
+          userId: myUserId,
+          handCardIds: handCardIdsForPreview,
+        }
+      : "skip"
   );
 
   // データを準備
@@ -244,6 +265,13 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
     }
   };
 
+  // 類似度マップ（提出フェーズでのみ取得）
+  const similarities = useMemo(() => {
+    if (!similarityPreview) return {};
+    // Convexから返される値は既にRecord<string, number>形式
+    return similarityPreview;
+  }, [similarityPreview]);
+
   return {
     battle,
     isLoading: battle === undefined,
@@ -254,6 +282,7 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
     fieldCardText: preparedData?.fieldCardText ?? "",
     isDeckCards: preparedData?.isDeckCards ?? {},
     rarityBonuses: preparedData?.rarityBonuses ?? {},
+    similarities,
     cardMap: preparedData?.cardMap ?? new Map(),
     exchangeCards,
     generateWord,
