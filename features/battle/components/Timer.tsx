@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface TimerProps {
   /** 残り時間（秒） */
@@ -25,30 +25,53 @@ export function Timer({
   const [displayTime, setDisplayTime] = useState(timeRemaining);
   const isWarning = displayTime <= warningThreshold;
   const isCritical = displayTime <= 5;
+  const hasTimedOutRef = useRef(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setDisplayTime(timeRemaining);
+    // 新しいタイマーが開始されたので、タイムアウトフラグをリセット
+    hasTimedOutRef.current = false;
   }, [timeRemaining]);
 
   useEffect(() => {
-    if (displayTime <= 0) {
-      onTimeout?.();
+    // 既にタイムアウトが呼び出されている場合は何もしない
+    if (hasTimedOutRef.current) {
       return;
     }
 
-    const interval = setInterval(() => {
+    if (displayTime <= 0) {
+      if (!hasTimedOutRef.current && onTimeout) {
+        hasTimedOutRef.current = true;
+        onTimeout();
+      }
+      return;
+    }
+
+    intervalRef.current = setInterval(() => {
       setDisplayTime((prev) => {
         const next = prev - 1;
         if (next <= 0) {
-          clearInterval(interval);
-          onTimeout?.();
+          if (!hasTimedOutRef.current && onTimeout) {
+            hasTimedOutRef.current = true;
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            onTimeout();
+          }
           return 0;
         }
         return next;
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [displayTime, onTimeout]);
 
   const minutes = Math.floor(displayTime / 60);
