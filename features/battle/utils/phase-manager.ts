@@ -41,8 +41,8 @@ export function shouldTransitionToNextPhase(battle: Battle): boolean {
   // フェーズごとの完了条件チェック
   switch (current_phase) {
     case "field_card_presentation":
-      // 自動的に次へ（演出時間のみ）
-      return true;
+      // 演出時間経過後にタイムアウトで遷移
+      return false;
 
     case "player_action":
       // 全プレイヤーが準備完了
@@ -64,10 +64,7 @@ export function shouldTransitionToNextPhase(battle: Battle): boolean {
       return false;
     }
     case "point_calculation":
-      // 演出時間経過後
-      return true;
-
-    default:
+      // 演出時間経過後にタイムアウトで遷移
       return false;
   }
 }
