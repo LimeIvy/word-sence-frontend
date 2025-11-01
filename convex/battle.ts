@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUser } from "./user";
 
 const submissionTypeValidator = v.union(v.literal("normal"), v.literal("victory_declaration"));
 const responseTypeValidator = v.union(v.literal("call"), v.literal("fold"));
@@ -52,6 +53,43 @@ async function getCardOrThrow(
     throw new Error(`カードが見つかりません: ${cardId}`);
   }
   return card;
+}
+
+/**
+ * 現在の認証ユーザーを取得（認証されていない場合はエラー）
+ */
+async function getCurrentUserOrThrow(ctx: MutationCtx | QueryCtx): Promise<Doc<"user">> {
+  const user = await getCurrentUser(ctx);
+  if (!user) {
+    throw new Error("認証されていません。ログインしてください");
+  }
+  return user;
+}
+
+/**
+ * 認証ユーザーが指定されたユーザーIDと一致するか検証
+ */
+function verifyUserAuthentication(authenticatedUserId: Id<"user">, targetUserId: Id<"user">) {
+  if (authenticatedUserId !== targetUserId) {
+    throw new Error("この操作を実行する権限がありません");
+  }
+}
+
+/**
+ * デッキの所有者を検証
+ */
+async function verifyDeckOwnership(
+  ctx: MutationCtx,
+  deckId: Id<"deck">,
+  expectedOwnerId: Id<"user">
+): Promise<void> {
+  const deck = await ctx.db.get(deckId);
+  if (!deck) {
+    throw new Error(`デッキが見つかりません: ${deckId}`);
+  }
+  if (deck.user_id !== expectedOwnerId) {
+    throw new Error("指定されたデッキはこのプレイヤーのものではありません");
+  }
 }
 
 /**
@@ -335,12 +373,25 @@ export const createBattle = mutation({
     deck_ids: v.array(v.id("deck")),
   },
   handler: async (ctx, { player_ids, deck_ids }) => {
+    // 認証チェック：現在のユーザーを取得
+    const currentUser = await getCurrentUserOrThrow(ctx);
+
+    // 認可チェック：現在のユーザーがプレイヤーの一人であることを確認
+    if (!player_ids.includes(currentUser._id)) {
+      throw new Error("バトルを作成できるのは参加プレイヤーのみです");
+    }
+
     // 入力検証
     if (player_ids.length !== deck_ids.length) {
       throw new Error("プレイヤーIDとデッキIDの長さが一致しません");
     }
-    if (player_ids.length == 2) {
+    if (player_ids.length !== 2) {
       throw new Error("現在は2人のプレイヤーのみ対戦可能です");
+    }
+
+    // デッキ所有権の検証：各デッキが対応するプレイヤーのものであることを確認
+    for (let i = 0; i < player_ids.length; i++) {
+      await verifyDeckOwnership(ctx, deck_ids[i], player_ids[i]);
     }
 
     // お題カードをランダムに選択
@@ -411,6 +462,10 @@ export const submitCard = mutation({
     submission_type: submissionTypeValidator,
   },
   handler: async (ctx, { battle_id, user_id, card_id, submission_type }) => {
+    // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    verifyUserAuthentication(currentUser._id, user_id);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
@@ -508,6 +563,10 @@ export const respondToDeclaration = mutation({
     response_type: responseTypeValidator,
   },
   handler: async (ctx, { battle_id, user_id, response_type }) => {
+    // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    verifyUserAuthentication(currentUser._id, user_id);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
@@ -562,6 +621,10 @@ export const setPlayerReady = mutation({
     user_id: v.id("user"),
   },
   handler: async (ctx, { battle_id, user_id }) => {
+    // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    verifyUserAuthentication(currentUser._id, user_id);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
@@ -617,6 +680,10 @@ export const exchangeCards = mutation({
     draw_source: drawSourceValidator,
   },
   handler: async (ctx, { battle_id, user_id, discard_card_ids, draw_source }) => {
+    // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    verifyUserAuthentication(currentUser._id, user_id);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
@@ -729,6 +796,10 @@ export const generateWord = mutation({
     negative_cards: v.array(v.id("card")),
   },
   handler: async (ctx, { battle_id, user_id, positive_cards, negative_cards }) => {
+    // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
+    const currentUser = await getCurrentUserOrThrow(ctx);
+    verifyUserAuthentication(currentUser._id, user_id);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
@@ -1059,9 +1130,17 @@ async function transitionToPointCalculationMultiPlayers(battle: Doc<"battle">) {
 export const startNextRound = mutation({
   args: { battle_id: v.id("battle") },
   handler: async (ctx, { battle_id }) => {
+    // 認証チェック：現在のユーザーを取得
+    const currentUser = await getCurrentUserOrThrow(ctx);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
+    }
+
+    // 認可チェック：現在のユーザーがバトルの参加者であることを確認
+    if (!battle.player_ids.includes(currentUser._id)) {
+      throw new Error("このバトルの参加者のみが次のラウンドを開始できます");
     }
 
     // フェーズチェック
@@ -1111,9 +1190,17 @@ export const startNextRound = mutation({
 export const checkPhaseTimeout = mutation({
   args: { battle_id: v.id("battle") },
   handler: async (ctx, { battle_id }) => {
+    // 認証チェック：現在のユーザーを取得
+    const currentUser = await getCurrentUserOrThrow(ctx);
+
     const battle = await ctx.db.get(battle_id);
     if (!battle) {
       throw new Error("バトルが見つかりません");
+    }
+
+    // 認可チェック：現在のユーザーがバトルの参加者であることを確認
+    if (!battle.player_ids.includes(currentUser._id)) {
+      throw new Error("このバトルの参加者のみがタイムアウトチェックを実行できます");
     }
 
     if (battle.game_status !== "active") {
