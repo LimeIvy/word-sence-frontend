@@ -339,8 +339,8 @@ export const createBattle = mutation({
     if (player_ids.length !== deck_ids.length) {
       throw new Error("プレイヤーIDとデッキIDの長さが一致しません");
     }
-    if (player_ids.length < 2 || player_ids.length > 5) {
-      throw new Error("バトルには2-5人のプレイヤーが必要です");
+    if (player_ids.length == 2) {
+      throw new Error("現在は2人のプレイヤーのみ対戦可能です");
     }
 
     // お題カードをランダムに選択
