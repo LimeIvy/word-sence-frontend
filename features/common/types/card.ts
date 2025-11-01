@@ -34,10 +34,9 @@ export type OwnedCardWithDetail = UserCard & {
  */
 export interface DeckCardDetail {
   position: number;
-  user_card_id: number;
+  user_card_id: string;
   card: Card;
 }
-
 /**
  * バトルで使用するカード情報（レアリティ付き）
  */

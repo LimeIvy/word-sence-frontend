@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rarities, RarityConfig } from "../types/ratity";
+import { rarities, RarityConfig } from "../types/rarity";
 
 // Legendaryカード用のリスト
 function LegendaryCardList() {
