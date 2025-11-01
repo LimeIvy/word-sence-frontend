@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useBattle } from "../hooks/useBattle";
 import { usePhaseTimer } from "../hooks/usePhaseTimer";
@@ -51,14 +51,22 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     isActionLoading,
   } = useBattle({ battleId, myUserId });
 
+  // ラウンド結果モーダルの表示履歴を追跡
+  const shownRoundRef = useRef<number>(-1);
+  // バトル終了モーダルの表示履歴を追跡
+  const hasShownBattleResultRef = useRef<boolean>(false);
+
+  // タイムアウト時の処理（メモ化）
+  const handlePhaseTimeout = useCallback(() => {
+    // タイムアウト時の処理（自動処理など）
+    console.log("Phase timeout");
+  }, []);
+
   // フェーズタイマー
   const timeRemaining = usePhaseTimer(
     battle?.phase_start_time ?? Date.now(),
     battle?.current_phase ?? "field_card_presentation",
-    () => {
-      // タイムアウト時の処理（自動処理など）
-      console.log("Phase timeout");
-    }
+    handlePhaseTimeout
   );
 
   // モーダルハンドラー
@@ -117,20 +125,25 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
 
   // ラウンド結果モーダルの表示制御（useEffectで処理）
   useEffect(() => {
+    const currentRound = battle?.current_round ?? 0;
     const shouldShow =
-      battle?.current_phase === "point_calculation" && latestRoundResult && !isRoundResultModalOpen;
+      battle?.current_phase === "point_calculation" &&
+      latestRoundResult &&
+      shownRoundRef.current !== currentRound;
     if (shouldShow) {
+      shownRoundRef.current = currentRound;
       setIsRoundResultModalOpen(true);
     }
-  }, [battle?.current_phase, latestRoundResult, isRoundResultModalOpen]);
+  }, [battle?.current_phase, battle?.current_round, latestRoundResult]);
 
   // バトル終了モーダルの表示制御（useEffectで処理）
   useEffect(() => {
-    const shouldShow = battle?.game_status === "finished" && !isBattleResultModalOpen;
+    const shouldShow = battle?.game_status === "finished" && !hasShownBattleResultRef.current;
     if (shouldShow) {
+      hasShownBattleResultRef.current = true;
       setIsBattleResultModalOpen(true);
     }
-  }, [battle?.game_status, isBattleResultModalOpen]);
+  }, [battle?.game_status]);
 
   // ローディング状態
   if (isLoading || !battle || !myPlayer || !opponentPlayer) {
