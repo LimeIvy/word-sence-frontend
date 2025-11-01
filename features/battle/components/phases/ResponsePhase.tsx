@@ -3,10 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Handshake, SkipForward } from "lucide-react";
 import type { Card } from "../../../common/types/card";
+import type { SubmittedCard, TurnState } from "../../types/player";
 import { HandArea } from "../HandArea";
 import { OpponentHand } from "../OpponentHand";
-import type { TurnState } from "../../types/player";
-import type { SubmittedCard } from "../../types/player";
 
 export interface ResponsePhaseProps {
   /** 自分の手札 */
@@ -72,7 +71,10 @@ export function ResponsePhase({
           >
             <div className="text-center space-y-3">
               <div className="text-4xl mb-2">👑</div>
-              <div className="text-xl font-bold text-white" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.6)" }}>
+              <div
+                className="text-xl font-bold text-white"
+                style={{ textShadow: "0 2px 4px rgba(0,0,0,0.6)" }}
+              >
                 {opponentName}が勝利宣言をしました！
               </div>
               {opponentSubmission && (
@@ -165,10 +167,12 @@ export function ResponsePhase({
               size="lg"
               className="flex items-center gap-2 min-w-[180px]"
               style={{
-                background: "linear-gradient(135deg, rgba(156,163,175,0.95), rgba(107,114,128,0.9))",
+                background:
+                  "linear-gradient(135deg, rgba(156,163,175,0.95), rgba(107,114,128,0.9))",
                 border: "2px solid rgba(209,213,219,0.7)",
                 color: "white",
-                boxShadow: "0 4px 12px rgba(156,163,175,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+                boxShadow:
+                  "0 4px 12px rgba(156,163,175,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
               }}
             >
               <SkipForward className="w-5 h-5" />
@@ -187,4 +191,3 @@ export function ResponsePhase({
     </div>
   );
 }
-
