@@ -20,6 +20,8 @@ export interface ActionPhaseProps {
   myActionsLog: ActionLog[];
   /** 相手の行動ログ */
   opponentActionsLog: ActionLog[];
+  /** 相手のデッキ残り枚数 */
+  opponentDeckRemaining?: number;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
@@ -47,6 +49,7 @@ export function ActionPhase({
   myTurnState,
   myActionsLog,
   opponentActionsLog,
+  opponentDeckRemaining,
   myName = "あなた",
   opponentName = "相手",
   onCardSelect,
@@ -65,7 +68,7 @@ export function ActionPhase({
         <OpponentHand
           handCount={opponentHandCount}
           opponentName={opponentName}
-          deckRemaining={myTurnState.deck_cards_remaining}
+          deckRemaining={opponentDeckRemaining}
         />
       </div>
 

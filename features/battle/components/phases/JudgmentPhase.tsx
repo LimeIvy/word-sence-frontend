@@ -19,6 +19,8 @@ export interface JudgmentPhaseProps {
   roundResult: RoundResult;
   /** 自分のユーザーID */
   myUserId: string;
+  /** 相手のデッキ残り枚数 */
+  opponentDeckRemaining?: number;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
@@ -38,6 +40,7 @@ export function JudgmentPhase({
   myTurnState,
   roundResult,
   myUserId,
+  opponentDeckRemaining,
   myName = "あなた",
   opponentName = "相手",
   onAnimationComplete,
@@ -94,7 +97,7 @@ export function JudgmentPhase({
         <OpponentHand
           handCount={opponentHandCount}
           opponentName={opponentName}
-          deckRemaining={myTurnState.deck_cards_remaining}
+          deckRemaining={opponentDeckRemaining}
         />
       </div>
 

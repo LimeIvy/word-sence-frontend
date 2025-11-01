@@ -16,6 +16,8 @@ export interface ResponsePhaseProps {
   myTurnState: TurnState;
   /** 相手の提出カード情報 */
   opponentSubmission?: SubmittedCard;
+  /** 相手のデッキ残り枚数 */
+  opponentDeckRemaining?: number;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
@@ -38,6 +40,7 @@ export function ResponsePhase({
   opponentHandCount,
   myTurnState,
   opponentSubmission,
+  opponentDeckRemaining,
   myName = "あなた",
   opponentName = "相手",
   onCall,
@@ -54,7 +57,7 @@ export function ResponsePhase({
         <OpponentHand
           handCount={opponentHandCount}
           opponentName={opponentName}
-          deckRemaining={myTurnState.deck_cards_remaining}
+          deckRemaining={opponentDeckRemaining}
         />
       </div>
 

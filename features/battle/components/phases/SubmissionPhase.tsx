@@ -24,6 +24,8 @@ export interface SubmissionPhaseProps {
   rarityBonuses?: Record<string, number>;
   /** カードごとのデッキカードフラグマップ */
   isDeckCards?: Record<string, boolean>;
+  /** 相手のデッキ残り枚数 */
+  opponentDeckRemaining?: number;
   /** 自分の名前 */
   myName?: string;
   /** 相手の名前 */
@@ -52,6 +54,7 @@ export function SubmissionPhase({
   similarities = {},
   rarityBonuses = {},
   isDeckCards = {},
+  opponentDeckRemaining,
   myName = "あなた",
   opponentName = "相手",
   onCardSelect,
@@ -72,7 +75,7 @@ export function SubmissionPhase({
         <OpponentHand
           handCount={opponentHandCount}
           opponentName={opponentName}
-          deckRemaining={myTurnState.deck_cards_remaining}
+          deckRemaining={opponentDeckRemaining}
         />
       </div>
 
