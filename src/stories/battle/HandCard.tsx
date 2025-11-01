@@ -301,7 +301,7 @@ export const HandCard = ({
 
             {/* 中央の文字 */}
             <div
-              className="absolute inset-0 flex items-center justify-center text-white font-black z-10"
+              className="absolute inset-0 flex items-center justify-center text-white font-black z-10 select-none"
               style={{
                 textShadow,
                 fontSize: fontSizes.raritySize,
@@ -313,7 +313,7 @@ export const HandCard = ({
 
           {/* メイン文字 */}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-black leading-none text-white p-1 text-center break-words select-none"
             style={{
               fontSize: fontSizes.textSize,
               letterSpacing: fontSizes.letterSpacing,
@@ -340,22 +340,24 @@ export const HandCard = ({
               }}
             >
               <div className="flex justify-between">
-                <span className="text-gray-400">類似度</span>
-                <span className="font-mono font-bold">{Math.round((similarity + 1) * 50)}点</span>
+                <span className="text-gray-400 select-none">類似度</span>
+                <span className="font-mono font-bold select-none">
+                  {Math.round((similarity + 1) * 50)}点
+                </span>
               </div>
 
               {rarityBonus !== undefined && rarityBonus > 0 && (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">ボーナス</span>
-                    <span className="font-mono font-bold text-yellow-400">
+                    <span className="text-gray-400 select-none">ボーナス</span>
+                    <span className="font-mono font-bold text-yellow-400 select-none">
                       +{Math.round(rarityBonus * 50)}点
                     </span>
                   </div>
                   <div className="h-px bg-gray-600 my-0.5" />
                   <div className="flex justify-between">
-                    <span className="text-gray-300 font-semibold">最終</span>
-                    <span className="font-mono font-bold text-green-400">
+                    <span className="text-gray-300 font-semibold select-none">最終</span>
+                    <span className="font-mono font-bold text-green-400 select-none">
                       {Math.round(((finalScore ?? 0) + 1) * 50)}点
                     </span>
                   </div>

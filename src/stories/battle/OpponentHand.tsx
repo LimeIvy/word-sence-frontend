@@ -30,9 +30,9 @@ export const OpponentHand = ({
   className = "",
 }: OpponentHandProps) => {
   return (
-    <div className={`w-full max-w-xl md:max-w-2xl lg:max-w-4xl ${className}`}>
+    <div className={`w-full max-w-xl md:max-w-2xl lg:max-w-4xl flex flex-col h-full ${className}`}>
       {/* ヘッダー情報 - 和風装飾 */}
-      <div className="relative mb-4 px-4">
+      <div className="relative mb-1 px-3 flex-shrink-0">
         {/* 装飾的な背景 */}
         <div
           className="absolute inset-0 rounded-lg"
@@ -44,34 +44,34 @@ export const OpponentHand = ({
 
         {/* 左右の扇装飾 */}
         <div
-          className="absolute -left-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30"
+          className="absolute -left-2 top-1/2 transform -translate-y-1/2 text-2xl opacity-30"
           style={{ transform: "translateY(-50%) rotate(-15deg)" }}
         >
           🌸
         </div>
         <div
-          className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30"
+          className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-2xl opacity-30"
           style={{ transform: "translateY(-50%) rotate(15deg)" }}
         >
           🌸
         </div>
 
-        <div className="relative flex items-center justify-between py-3 px-4 gap-4">
+        <div className="relative flex items-center justify-between py-2 px-3 gap-3">
           {/* プレイヤー名と公開バッジ */}
-          <div className="flex items-center gap-3 flex-shrink min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-shrink min-w-0 flex-1">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, rgba(218,165,32,0.9), rgba(184,134,11,0.8))",
                 boxShadow: "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2)",
               }}
             >
-              <span className="text-white text-sm font-bold">👤</span>
+              <span className="text-white text-xs font-bold">👤</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-1">
                 <span
-                  className="font-bold text-lg truncate"
+                  className="font-bold text-base truncate select-none"
                   style={{
                     color: "#654321",
                     textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -80,46 +80,26 @@ export const OpponentHand = ({
                 >
                   {playerName}
                 </span>
-                <span className="text-amber-800/70 text-sm flex-shrink-0">の手札</span>
+                <span className="text-amber-800/70 text-xs flex-shrink-0 select-none">の手札</span>
               </div>
-            </div>
-            {/* 公開バッジ - 和風 */}
-            <div
-              className="flex items-center gap-1 px-3 py-1 rounded-full flex-shrink-0"
-              style={{
-                background: "linear-gradient(135deg, rgba(220,38,38,0.2), rgba(185,28,28,0.15))",
-                border: "1px solid rgba(220,38,38,0.4)",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1)",
-              }}
-            >
-              <span className="text-red-300 text-xs font-semibold">👁️</span>
-              <span
-                className="text-xs font-semibold"
-                style={{
-                  color: "rgba(220,38,38,0.9)",
-                  textShadow: "0 1px 1px rgba(0,0,0,0.3)",
-                }}
-              >
-                公開
-              </span>
             </div>
           </div>
 
           {/* デッキ残り */}
           {showDeckRemaining && deckRemaining !== undefined && (
             <div
-              className="flex items-center gap-2 px-4 py-2 rounded-full flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0"
               style={{
                 background: "linear-gradient(135deg, rgba(139,69,19,0.95), rgba(101,67,33,0.9))",
                 border: "2px solid rgba(218,165,32,0.6)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,245,230,0.2)",
               }}
             >
-              <span className="text-2xl">🎴</span>
+              <span className="text-xl">🎴</span>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs text-amber-100/90">残り</span>
-                <span className="text-xl font-bold text-amber-50">{deckRemaining}</span>
-                <span className="text-xs text-amber-100/90">枚</span>
+                <span className="text-xs text-amber-100/90 select-none">残り</span>
+                <span className="text-lg font-bold text-amber-50 select-none">{deckRemaining}</span>
+                <span className="text-xs text-amber-100/90 select-none">枚</span>
               </div>
             </div>
           )}
@@ -127,7 +107,7 @@ export const OpponentHand = ({
       </div>
 
       {/* 手札エリア - 畳風デザイン */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-visible">
         {/* 畳の質感 - ベース */}
         <div
           className="absolute inset-0 rounded-2xl"
@@ -200,7 +180,7 @@ export const OpponentHand = ({
         />
 
         {/* カード配置エリア */}
-        <div className="relative flex justify-center items-start gap-3 px-8 py-6 min-h-[140px] overflow-hidden">
+        <div className="relative flex justify-center items-start gap-4 px-6 pt-8 pb-6">
           {cards.length === 0 ? (
             // 手札が空の場合 - 和風
             <div className="flex flex-col items-center justify-center h-32">
@@ -214,7 +194,7 @@ export const OpponentHand = ({
                 <span className="text-5xl">🎴</span>
               </div>
               <span
-                className="text-sm font-semibold"
+                className="text-sm font-semibold select-none"
                 style={{
                   color: "rgba(101,67,33,0.7)",
                   textShadow: "0 1px 1px rgba(255,255,255,0.3)",
@@ -297,19 +277,6 @@ export const OpponentHand = ({
           </div>
         </div>
       )}
-
-      {/* 情報ヒント - 和風 */}
-      <div className="mt-2 text-center">
-        <p
-          className="text-xs"
-          style={{
-            color: "rgba(139,69,19,0.6)",
-            textShadow: "0 1px 1px rgba(255,255,255,0.2)",
-          }}
-        >
-          💡 相手の手札は常に公開されています
-        </p>
-      </div>
     </div>
   );
 };

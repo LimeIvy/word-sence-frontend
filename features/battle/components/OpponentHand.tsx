@@ -38,13 +38,13 @@ export function OpponentHand({
 
           {/* 左右の扇装飾 */}
           <div
-            className="absolute -left-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30"
+            className="absolute -left-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30 select-none"
             style={{ transform: "translateY(-50%) rotate(-15deg)" }}
           >
             🌸
           </div>
           <div
-            className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30"
+            className="absolute -right-2 top-1/2 transform -translate-y-1/2 text-3xl opacity-30 select-none"
             style={{ transform: "translateY(-50%) rotate(15deg)" }}
           >
             🌸
@@ -60,7 +60,7 @@ export function OpponentHand({
                     boxShadow: "0 2px 4px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.2)",
                   }}
                 >
-                  <span className="text-white text-sm font-bold">👤</span>
+                  <span className="text-white text-sm font-bold select-none">👤</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-1">
@@ -89,7 +89,7 @@ export function OpponentHand({
                   boxShadow: "0 2px 8px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,245,230,0.2)",
                 }}
               >
-                <span className="text-2xl">🎴</span>
+                <span className="text-2xl select-none">🎴</span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xs text-amber-100/90">残り</span>
                   <span className="text-xl font-bold text-amber-50">{deckRemaining}</span>
@@ -156,10 +156,10 @@ export function OpponentHand({
         />
 
         {/* 和風装飾 - 四隅の桜 */}
-        <div className="absolute top-4 left-4 text-xl opacity-20">🌸</div>
-        <div className="absolute top-4 right-4 text-xl opacity-20">🌸</div>
-        <div className="absolute bottom-4 left-4 text-xl opacity-20">🌸</div>
-        <div className="absolute bottom-4 right-4 text-xl opacity-20">🌸</div>
+        <div className="absolute top-4 left-4 text-xl opacity-20 select-none">🌸</div>
+        <div className="absolute top-4 right-4 text-xl opacity-20 select-none">🌸</div>
+        <div className="absolute bottom-4 left-4 text-xl opacity-20 select-none">🌸</div>
+        <div className="absolute bottom-4 right-4 text-xl opacity-20 select-none">🌸</div>
 
         {/* 和紙テクスチャの上乗せ */}
         <div
@@ -186,7 +186,7 @@ export function OpponentHand({
                   border: "2px dashed rgba(139,69,19,0.3)",
                 }}
               >
-                <span className="text-5xl">🎴</span>
+                <span className="text-5xl select-none">🎴</span>
               </div>
               <span
                 className="text-sm font-semibold"
@@ -249,7 +249,7 @@ export function OpponentHand({
                             filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
                           }}
                         >
-                          🎴
+                          <span className="select-none">🎴</span>
                         </div>
                       </div>
 

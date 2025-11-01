@@ -58,7 +58,7 @@ export function FieldCard({
           >
             お題カード
           </span>
-          <span className="text-2xl">🎴</span>
+          <span className="text-2xl select-none">🎴</span>
         </div>
       </div>
 
@@ -142,14 +142,16 @@ export function FieldCard({
           </svg>
 
           {/* 桜の花びら装飾 */}
-          <div className="absolute top-3 left-3 text-xl opacity-30 animate-pulse">🌸</div>
-          <div className="absolute top-3 right-3 text-xl opacity-30 animate-pulse delay-150">
+          <div className="absolute top-3 left-3 text-xl opacity-30 animate-pulse select-none">
             🌸
           </div>
-          <div className="absolute bottom-3 left-3 text-xl opacity-30 animate-pulse delay-300">
+          <div className="absolute top-3 right-3 text-xl opacity-30 animate-pulse delay-150 select-none">
             🌸
           </div>
-          <div className="absolute bottom-3 right-3 text-xl opacity-30 animate-pulse delay-450">
+          <div className="absolute bottom-3 left-3 text-xl opacity-30 animate-pulse delay-300 select-none">
+            🌸
+          </div>
+          <div className="absolute bottom-3 right-3 text-xl opacity-30 animate-pulse delay-450 select-none">
             🌸
           </div>
 
@@ -188,7 +190,7 @@ export function FieldCard({
                 filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))",
               }}
             >
-              👑
+              <span className="select-none">👑</span>
             </div>
           </div>
 

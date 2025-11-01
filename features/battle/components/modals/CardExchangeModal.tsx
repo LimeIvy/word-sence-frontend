@@ -109,7 +109,7 @@ export function CardExchangeModal({
             <div className="flex justify-center gap-3 px-4 py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 min-h-[200px]">
               {cards.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <span className="text-4xl mb-2">🎴</span>
+                  <span className="text-4xl mb-2 select-none">🎴</span>
                   <span className="text-sm">手札がありません</span>
                 </div>
               ) : (
@@ -159,7 +159,7 @@ export function CardExchangeModal({
                       color: deckRemaining >= selectedCardIds.length ? "#2563EB" : "#DC2626",
                     }}
                   >
-                    <span className="text-xl">🎴</span>
+                    <span className="text-xl select-none">🎴</span>
                     <span>デッキから（残り{deckRemaining}枚）</span>
                   </Label>
                 </div>

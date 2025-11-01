@@ -270,7 +270,7 @@ export function HandCard({
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
               }}
             >
-              🎴
+              <span className="select-none">🎴</span>
             </div>
           )}
 

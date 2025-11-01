@@ -44,7 +44,7 @@ export const FieldCard = ({
           }}
         >
           <span
-            className="font-bold text-base tracking-wider"
+            className="font-bold text-base tracking-wider select-none"
             style={{
               color: "#FFF5E6",
               textShadow: "0 1px 3px rgba(0,0,0,0.6)",
@@ -160,7 +160,7 @@ export const FieldCard = ({
           {/* 単語テキスト */}
           <div className="relative z-10 px-4">
             <p
-              className={`${sizeClasses.text} font-black text-center`}
+              className={`${sizeClasses.text} font-black text-center select-none`}
               style={{
                 writingMode: "vertical-rl",
                 textOrientation: "upright",
@@ -207,17 +207,6 @@ export const FieldCard = ({
       </div>
 
       {/* 説明テキスト */}
-      <div className="text-center mt-4">
-        <p
-          className="text-sm font-medium"
-          style={{
-            color: "rgba(139,69,19,0.8)",
-            textShadow: "0 1px 2px rgba(255,255,255,0.3)",
-          }}
-        >
-          このカードに近い単語を提出しよう！
-        </p>
-      </div>
 
       {/* アニメーション用のカスタムCSS */}
       <style>{`

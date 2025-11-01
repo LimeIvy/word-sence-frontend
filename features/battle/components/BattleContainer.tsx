@@ -1,20 +1,26 @@
 "use client";
 
+import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { ActionButtons } from "../../../src/stories/battle/ActionButtons";
+import { ActionCounter } from "../../../src/stories/battle/ActionCounter";
+import { ActionLog, type ActionLogEntry } from "../../../src/stories/battle/ActionLog";
+import { BattleHeader } from "../../../src/stories/battle/BattleHeader";
+import { FieldCard } from "../../../src/stories/battle/FieldCard";
+import { HandArea } from "../../../src/stories/battle/HandArea";
+import type { CardRarity } from "../../../src/stories/battle/HandCard";
+import { OpponentHand } from "../../../src/stories/battle/OpponentHand";
+import { Timer } from "../../../src/stories/battle/Timer";
+import { mapRarityToJapanese } from "../../common/utils/rarity";
 import { useBattle } from "../hooks/useBattle";
 import { usePhaseTimer } from "../hooks/usePhaseTimer";
-import { BattleHeader } from "./BattleHeader";
-import { FieldCard } from "./FieldCard";
 import { BattleResultModal } from "./modals/BattleResultModal";
 import { CardExchangeModal } from "./modals/CardExchangeModal";
 import { RoundResultModal } from "./modals/RoundResultModal";
 import { WordGenerationModal } from "./modals/WordGenerationModal";
-import { ActionPhase } from "./phases/ActionPhase";
-import { JudgmentPhase } from "./phases/JudgmentPhase";
-import { ResponsePhase } from "./phases/ResponsePhase";
-import { SubmissionPhase } from "./phases/SubmissionPhase";
 
 export interface BattleContainerProps {
   /** バトルID */
@@ -35,6 +41,9 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
   const [isRoundResultModalOpen, setIsRoundResultModalOpen] = useState(false);
   const [isBattleResultModalOpen, setIsBattleResultModalOpen] = useState(false);
 
+  // ユーザー情報を取得（プロフィール含む）
+  const myUserWithProfile = useQuery(api.user.getMyUserWithProfile);
+
   const {
     battle,
     isLoading,
@@ -50,6 +59,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     submitCard,
     respondToDeclaration,
     isActionLoading,
+    cardMap,
   } = useBattle({ battleId, myUserId });
 
   // ラウンド結果モーダルの表示履歴を追跡
@@ -146,6 +156,169 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     }
   }, [battle?.game_status]);
 
+  // ユーザー名を取得（profileからnameを取得）
+  const myName = useMemo(() => {
+    if (!myUserWithProfile?.profile?.name) return "あなた";
+    return myUserWithProfile.profile.name || "あなた";
+  }, [myUserWithProfile?.profile?.name]);
+  const opponentName = "相手"; // TODO: 相手のユーザー情報を取得
+
+  // HandArea用のカードデータ変換
+  const handAreaCards = useMemo(() => {
+    return myHand.map((card) => ({
+      id: card.id,
+      word: card.name, // Card型のnameプロパティを使用
+      rarity: mapRarityToJapanese(card.rarity) as CardRarity,
+      similarity: similarities[card.id],
+      isDeckCard: isDeckCards[card.id],
+      rarityBonus: rarityBonuses[card.id],
+    }));
+  }, [myHand, similarities, isDeckCards, rarityBonuses]);
+
+  // OpponentHand用のカードデータ変換
+  const opponentHandCards = useMemo(() => {
+    if (!opponentPlayer) return [];
+    return opponentPlayer.hand.map((cardId) => {
+      const card = cardMap.get(cardId);
+      if (!card) {
+        return {
+          id: cardId,
+          word: "???",
+          rarity: "並" as CardRarity,
+        };
+      }
+      return {
+        id: cardId,
+        word: card.text,
+        rarity: mapRarityToJapanese(card.rarity) as CardRarity,
+        isDeckCard: false, // 相手のデッキカード情報は取得できない
+      };
+    });
+  }, [opponentPlayer, cardMap]);
+
+  // ActionLog用のデータ変換
+  const actionLogs = useMemo<ActionLogEntry[]>(() => {
+    if (!myPlayer || !opponentPlayer) return [];
+    const logs: ActionLogEntry[] = [];
+
+    // 自分の行動ログ
+    if (myPlayer.turn_state?.actions_log) {
+      for (const action of myPlayer.turn_state.actions_log) {
+        if (action.action_type === "card_exchange") {
+          const details = action.details as {
+            discarded_count: number;
+            draw_source: "deck" | "pool";
+          };
+          logs.push({
+            id: `my-${action.timestamp}-exchange`,
+            playerName: myName,
+            isOwnAction: true,
+            actionType:
+              details.draw_source === "deck" ? "card_exchange_deck" : "card_exchange_pool",
+            details: {
+              exchangedCount: details.discarded_count || 0,
+            },
+            timestamp: action.timestamp,
+          });
+        } else if (action.action_type === "word_generation") {
+          const details = action.details as { generated_card: Id<"card"> };
+          const generatedCard = cardMap.get(details.generated_card);
+          logs.push({
+            id: `my-${action.timestamp}-generate`,
+            playerName: myName,
+            isOwnAction: true,
+            actionType: "word_generation",
+            details: {
+              generatedWord: generatedCard?.text || "",
+            },
+            timestamp: action.timestamp,
+          });
+        }
+      }
+    }
+
+    // 相手の行動ログ
+    if (opponentPlayer.turn_state?.actions_log) {
+      for (const action of opponentPlayer.turn_state.actions_log) {
+        if (action.action_type === "card_exchange") {
+          const details = action.details as {
+            discarded_count: number;
+            draw_source: "deck" | "pool";
+          };
+          logs.push({
+            id: `opponent-${action.timestamp}-exchange`,
+            playerName: opponentName,
+            isOwnAction: false,
+            actionType:
+              details.draw_source === "deck" ? "card_exchange_deck" : "card_exchange_pool",
+            details: {
+              exchangedCount: details.discarded_count || 0,
+            },
+            timestamp: action.timestamp,
+          });
+        } else if (action.action_type === "word_generation") {
+          const details = action.details as { generated_card: Id<"card"> };
+          const generatedCard = cardMap.get(details.generated_card);
+          logs.push({
+            id: `opponent-${action.timestamp}-generate`,
+            playerName: opponentName,
+            isOwnAction: false,
+            actionType: "word_generation",
+            details: {
+              generatedWord: generatedCard?.text || "",
+            },
+            timestamp: action.timestamp,
+          });
+        }
+      }
+    }
+
+    // 提出情報
+    if (myPlayer.submitted_card) {
+      const card = cardMap.get(myPlayer.submitted_card.card_id);
+      logs.push({
+        id: `my-submit-${myPlayer.submitted_card.card_id}`,
+        playerName: myName,
+        isOwnAction: true,
+        actionType:
+          myPlayer.submitted_card.submission_type === "victory_declaration"
+            ? "victory_declaration"
+            : "card_submission",
+        details: {
+          submittedWord: card?.text || "",
+          declaredWord:
+            myPlayer.submitted_card.submission_type === "victory_declaration"
+              ? card?.text || ""
+              : undefined,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    if (opponentPlayer.submitted_card) {
+      const card = cardMap.get(opponentPlayer.submitted_card.card_id);
+      logs.push({
+        id: `opponent-submit-${opponentPlayer.submitted_card.card_id}`,
+        playerName: opponentName,
+        isOwnAction: false,
+        actionType:
+          opponentPlayer.submitted_card.submission_type === "victory_declaration"
+            ? "victory_declaration"
+            : "card_submission",
+        details: {
+          submittedWord: card?.text || "",
+          declaredWord:
+            opponentPlayer.submitted_card.submission_type === "victory_declaration"
+              ? card?.text || ""
+              : undefined,
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    return logs.sort((a, b) => a.timestamp - b.timestamp);
+  }, [myPlayer, opponentPlayer, myName, opponentName, cardMap]);
+
   // ローディング状態
   if (isLoading || !battle || !myPlayer || !opponentPlayer) {
     return (
@@ -159,93 +332,191 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
   }
 
   const currentPhase = battle.current_phase;
-  const myScore = myPlayer.score;
-  const opponentScore = opponentPlayer.score;
+  const myScore = Number(myPlayer.score);
+  const opponentScore = Number(opponentPlayer.score);
+  const maxTime = 60; // フェーズごとの最大時間（秒）
+  const actionsRemaining = Number(myPlayer.turn_state.actions_remaining);
+  const maxActions = 3;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-amber-100">
-      <BattleHeader
-        currentPhase={currentPhase}
-        timeRemaining={timeRemaining}
-        myScore={myScore}
-        opponentScore={opponentScore}
-        currentRound={battle.current_round}
-      />
-
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* フェーズ別UI */}
-        {currentPhase === "field_card_presentation" && (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <FieldCard word={fieldCardText} />
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-b from-amber-50 to-amber-100">
+      {/* メインコンテンツ: 縦3分割レイアウト */}
+      <main className="flex-1 min-h-0 overflow-hidden container mx-auto px-2 pt-1 pb-1 max-w-[1600px]">
+        <div className="grid grid-cols-12 gap-3 h-full">
+          {/* 左カラム: FieldCard + ActionButtons */}
+          <div className="col-span-2 flex flex-col gap-2 h-full overflow-hidden">
+            {/* 上: FieldCard */}
+            <div className="flex-shrink-0 pt-2 mt-10">
+              <FieldCard word={fieldCardText} size="small" animated={true} />
+            </div>
+            {/* 下: ActionButtons と ActionCounter */}
+            <div className="flex-1 flex flex-col gap-8 min-h-0 overflow-hidden justify-center mr-2">
+              <ActionButtons
+                onExchange={handleExchangeClick}
+                onGenerate={handleGenerateClick}
+                exchangeDisabled={
+                  isActionLoading ||
+                  actionsRemaining === 0 ||
+                  currentPhase !== "player_action" ||
+                  Number(myPlayer.turn_state.deck_cards_remaining) === 0
+                }
+                generateDisabled={
+                  isActionLoading || actionsRemaining === 0 || currentPhase !== "player_action"
+                }
+                deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
+              />
+              <ActionCounter
+                actionsRemaining={actionsRemaining}
+                maxActions={maxActions}
+                warningThreshold={1}
+              />
+            </div>
           </div>
-        )}
 
-        {currentPhase === "player_action" && (
-          <ActionPhase
-            myHand={myHand}
-            opponentHandCount={opponentPlayer.hand.length}
-            myTurnState={myPlayer.turn_state}
-            myActionsLog={myPlayer.turn_state.actions_log}
-            opponentActionsLog={opponentPlayer.turn_state.actions_log}
-            opponentDeckRemaining={opponentPlayer.turn_state.deck_cards_remaining}
-            selectedCardIds={selectedCardIds}
-            onCardSelect={(cardId) => {
-              if (selectedCardIds.includes(cardId)) {
-                setSelectedCardIds(selectedCardIds.filter((id) => id !== cardId));
-              } else {
-                setSelectedCardIds([...selectedCardIds, cardId]);
-              }
-            }}
-            onExchangeClick={handleExchangeClick}
-            onGenerateClick={handleGenerateClick}
-            isLoading={isActionLoading}
-          />
-        )}
+          {/* 中央カラム: BattleHeader + カードエリア */}
+          <div className="col-span-7 flex flex-col gap-2 h-full overflow-hidden">
+            {/* 上: BattleHeader */}
+            <div className="flex-shrink-0 flex justify-center min-w-0 px-2 mt-5 z-50">
+              <BattleHeader
+                player1Name={opponentName}
+                player1Score={opponentScore}
+                player2Name={myName}
+                player2Score={myScore}
+                currentRound={battle.current_round}
+                currentPhase={currentPhase}
+              />
+            </div>
+            {/* 下: カードエリア */}
+            <div className="flex-1 min-h-0 overflow-visible flex flex-col gap-1 mt-10">
+              {/* 中央上: OpponentHand */}
+              <div className="flex-[1] min-h-0 overflow-visible pt-2">
+                <OpponentHand
+                  cards={opponentHandCards}
+                  playerName={opponentName}
+                  showDeckRemaining={true}
+                  deckRemaining={Number(opponentPlayer.turn_state.deck_cards_remaining)}
+                  className="h-full gap-2"
+                />
+              </div>
 
-        {currentPhase === "word_submission" && (
-          <SubmissionPhase
-            myHand={myHand}
-            opponentHandCount={opponentPlayer.hand.length}
-            myTurnState={myPlayer.turn_state}
-            fieldCardText={fieldCardText}
-            selectedCardId={selectedCardId}
-            similarities={similarities}
-            rarityBonuses={rarityBonuses}
-            isDeckCards={isDeckCards}
-            opponentDeckRemaining={opponentPlayer.turn_state.deck_cards_remaining}
-            onCardSelect={setSelectedCardId}
-            onNormalSubmit={selectedCardId ? () => handleNormalSubmit(selectedCardId) : undefined}
-            onVictoryDeclaration={
-              selectedCardId ? () => handleVictoryDeclaration(selectedCardId) : undefined
-            }
-            isLoading={isActionLoading}
-          />
-        )}
+              {/* 中央下: HandArea */}
+              <div className="flex-[1] min-h-0 overflow-visible pt-2">
+                <HandArea
+                  cards={handAreaCards}
+                  selectedCardIds={
+                    currentPhase === "word_submission"
+                      ? selectedCardId
+                        ? [selectedCardId]
+                        : []
+                      : selectedCardIds
+                  }
+                  multiSelect={currentPhase === "player_action"}
+                  onCardSelect={(cardId) => {
+                    if (currentPhase === "word_submission") {
+                      setSelectedCardId(cardId === selectedCardId ? undefined : cardId);
+                    } else {
+                      if (selectedCardIds.includes(cardId)) {
+                        setSelectedCardIds(selectedCardIds.filter((id) => id !== cardId));
+                      } else {
+                        setSelectedCardIds([...selectedCardIds, cardId]);
+                      }
+                    }
+                  }}
+                  showSimilarity={currentPhase === "word_submission"}
+                  playerName={myName}
+                  deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
+                  className="h-full gap-2"
+                />
+              </div>
+            </div>
+          </div>
 
-        {currentPhase === "response" && (
-          <ResponsePhase
-            myHand={myHand}
-            opponentHandCount={opponentPlayer.hand.length}
-            myTurnState={myPlayer.turn_state}
-            opponentSubmission={opponentPlayer.submitted_card}
-            opponentDeckRemaining={opponentPlayer.turn_state.deck_cards_remaining}
-            onCall={handleCall}
-            onFold={handleFold}
-            isLoading={isActionLoading}
-          />
-        )}
-
-        {currentPhase === "point_calculation" && latestRoundResult && (
-          <JudgmentPhase
-            myHand={myHand}
-            opponentHandCount={opponentPlayer.hand.length}
-            myTurnState={myPlayer.turn_state}
-            roundResult={latestRoundResult}
-            myUserId={myUserId}
-            opponentDeckRemaining={opponentPlayer.turn_state.deck_cards_remaining}
-          />
-        )}
+          {/* 右カラム: Timer + ActionLog */}
+          <div className="col-span-3 flex flex-col gap-2 h-full overflow-hidden">
+            {/* 上: Timer */}
+            <div className="flex-shrink-0 mt-6">
+              <Timer
+                remainingTime={timeRemaining}
+                maxTime={maxTime}
+                size="medium"
+                warningThreshold={20}
+                dangerThreshold={10}
+              />
+            </div>
+            {/* 下: ActionLog */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col pt-2 mb-10">
+              <ActionLog logs={actionLogs} maxItems={8} className="h-full" />
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* フェーズ別アクション */}
+      {currentPhase === "word_submission" && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-40">
+          {selectedCardId && (
+            <>
+              <button
+                onClick={() => handleNormalSubmit(selectedCardId)}
+                disabled={isActionLoading}
+                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+                style={{
+                  background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
+                  border: "2px solid rgba(96,165,250,0.7)",
+                  color: "white",
+                  boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
+                }}
+              >
+                通常提出
+              </button>
+              <button
+                onClick={() => handleVictoryDeclaration(selectedCardId)}
+                disabled={isActionLoading}
+                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+                style={{
+                  background: "linear-gradient(135deg, rgba(239,68,68,0.95), rgba(185,28,28,0.9))",
+                  border: "2px solid rgba(248,113,113,0.7)",
+                  color: "white",
+                  boxShadow: "0 4px 12px rgba(239,68,68,0.4)",
+                }}
+              >
+                勝利宣言
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {currentPhase === "response" && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-40">
+          <button
+            onClick={handleCall}
+            disabled={isActionLoading}
+            className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+            style={{
+              background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
+              border: "2px solid rgba(96,165,250,0.7)",
+              color: "white",
+              boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
+            }}
+          >
+            コール
+          </button>
+          <button
+            onClick={handleFold}
+            disabled={isActionLoading}
+            className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+            style={{
+              background: "linear-gradient(135deg, rgba(156,163,175,0.95), rgba(107,114,128,0.9))",
+              border: "2px solid rgba(209,213,219,0.7)",
+              color: "white",
+              boxShadow: "0 4px 12px rgba(156,163,175,0.4)",
+            }}
+          >
+            フォールド
+          </button>
+        </div>
+      )}
 
       {/* モーダル */}
       <CardExchangeModal
@@ -255,7 +526,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
           setSelectedCardIds([]);
         }}
         cards={myHand}
-        deckRemaining={myPlayer.turn_state.deck_cards_remaining}
+        deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
         onExchange={handleExchange}
         isLoading={isActionLoading}
       />

@@ -164,7 +164,7 @@ export const Timer = ({
             className={`absolute inset-0 flex items-center justify-center flex-col ${colors.pulse}`}
           >
             <div
-              className="font-mono font-bold"
+              className="font-mono font-bold select-none"
               style={{
                 fontSize: size === "large" ? "2.5rem" : size === "medium" ? "2rem" : "1.5rem",
                 color: colors.textColor,

@@ -55,9 +55,9 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
   const displayLogs = logs.slice(-maxItems).reverse(); // 最新のものが上に来るように
 
   return (
-    <div className={`w-80 md:w-96 lg:w-[400px] flex-shrink-0 ${className}`}>
+    <div className={`w-full max-w-full flex-shrink-0 flex flex-col ${className}`}>
       {/* ヘッダー - 和風 */}
-      <div className="relative mb-4 px-4">
+      <div className="relative mb-4 px-4 flex-shrink-0">
         {/* 装飾的な背景 */}
         <div
           className="absolute inset-0 rounded-lg"
@@ -84,7 +84,7 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
         <div className="relative flex items-center justify-center py-3 px-4">
           <span className="text-base">📜</span>
           <span
-            className="font-bold text-lg ml-2"
+            className="font-bold text-lg ml-2 select-none"
             style={{
               color: "#654321",
               textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -96,7 +96,7 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
       </div>
 
       {/* ログエリア - 和風 */}
-      <div className="relative w-full h-[460px]">
+      <div className="relative w-full flex-1 min-h-0">
         {/* 背景プレート */}
         <div
           className="absolute inset-0 rounded-2xl"
@@ -170,14 +170,14 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
 
         {/* ログリスト - 固定幅・固定高さでスクロール */}
         <div
-          className="relative p-4 space-y-2 h-[400px] overflow-y-auto overflow-x-hidden"
+          className="relative p-4 space-y-2 h-full overflow-y-auto overflow-x-hidden"
           style={{ width: "100%" }}
         >
           {displayLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full">
               <span className="text-4xl mb-2 opacity-30">📜</span>
               <span
-                className="text-sm font-semibold"
+                className="text-sm font-semibold select-none"
                 style={{
                   color: "rgba(101,67,33,0.9)",
                   textShadow: "0 1px 2px rgba(255,255,255,0.5)",
@@ -233,7 +233,7 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
                     </div>
                     <div className="flex-1 min-w-0 break-words">
                       <p
-                        className="text-sm font-medium leading-relaxed"
+                        className="text-sm font-medium leading-relaxed select-none"
                         style={{
                           color: log.isOwnAction ? "rgba(139,69,19,0.95)" : "rgba(60,45,30,0.95)",
                           textShadow: "0 1px 2px rgba(255,255,255,0.6)",

@@ -65,7 +65,7 @@ export const ActionCounter = ({
       >
         {/* ラベル */}
         <span
-          className={`${sizeClasses.text} font-semibold`}
+          className={`${sizeClasses.text} font-semibold select-none`}
           style={{
             color: actionsRemaining === 0 ? "rgba(200,200,200,0.9)" : "rgba(255,245,230,0.95)",
             textShadow: "0 1px 2px rgba(0,0,0,0.5)",
@@ -96,7 +96,7 @@ export const ActionCounter = ({
 
         {/* 数値表示 */}
         <span
-          className={`${sizeClasses.text} font-black`}
+          className={`${sizeClasses.text} font-black select-none`}
           style={{
             color: actionsRemaining === 0 ? "rgba(200,200,200,0.9)" : "rgba(255,245,230,0.95)",
             textShadow: "0 1px 2px rgba(0,0,0,0.5)",
