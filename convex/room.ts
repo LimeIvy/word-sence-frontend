@@ -335,13 +335,10 @@ export const startBattle = mutation({
 
     // バトルを作成（createBattleを呼び出す）
     // ホストが両プレイヤーの一人として認証されているため、createBattleを直接呼び出す
-    const battleResult: { battleId: Id<"battle"> } = await ctx.runMutation(
-      api.battle.createBattle,
-      {
-        player_ids: room.players,
-        deck_ids: [deck1, deck2],
-      }
-    );
+    const battleResult = await ctx.runMutation(api.battle.createBattle, {
+      player_ids: room.players,
+      deck_ids: [deck1, deck2],
+    });
 
     // ルームを更新
     await ctx.db.patch(roomId, {
