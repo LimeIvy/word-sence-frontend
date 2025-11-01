@@ -23,10 +23,7 @@ export default function GamePage() {
   const joinRoom = useMutation(api.room.joinRoom);
   const myRoom = useQuery(api.room.getMyRoom);
   const user = useQuery(api.user.getMyUser);
-  const activeBattles = useQuery(
-    api.battle.getUserBattles,
-    user ? { userId: user._id } : "skip"
-  );
+  const activeBattles = useQuery(api.battle.getUserBattles, user ? { userId: user._id } : "skip");
 
   // アクティブなルームがある場合はリダイレクト
   useEffect(() => {
@@ -184,9 +181,7 @@ export default function GamePage() {
             </Button>
 
             {joinError && (
-              <div className="text-sm text-red-600 dark:text-red-400 text-center">
-                {joinError}
-              </div>
+              <div className="text-sm text-red-600 dark:text-red-400 text-center">{joinError}</div>
             )}
           </div>
         </div>
@@ -194,4 +189,3 @@ export default function GamePage() {
     </main>
   );
 }
-
