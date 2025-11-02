@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { Gem, Loader2 } from "lucide-react";
+import { CirclePoundSterling, Loader2 } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { WordCard } from "../../common/components/wordCard";
 import { mapRarityToJapanese } from "../../deck/utils/rarity-utils";
@@ -45,7 +45,7 @@ export function PurchaseHistory() {
 
             <div className="flex flex-col items-center gap-1 w-full">
               <div className="flex items-center gap-1 text-lg font-bold text-amber-600">
-                <Gem className="size-5" />
+                <CirclePoundSterling className="size-5" />
                 <span>{purchase.price.toString()}</span>
               </div>
 

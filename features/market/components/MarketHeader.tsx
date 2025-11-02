@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { ArrowLeft, Gem } from "lucide-react";
+import { ArrowLeft, CirclePoundSterling } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../../convex/_generated/api";
 import { SellCardModal } from "./SellCardModal";
@@ -26,7 +26,7 @@ export function MarketHeader() {
           <div className="flex items-center gap-4">
             {userWithProfile?.profile && (
               <div className="flex items-center gap-2 px-4 py-2 bg-amber-100 rounded-full">
-                <Gem className="size-5 text-amber-600" />
+                <CirclePoundSterling className="size-5" />
                 <span className="font-bold text-amber-800">
                   {userWithProfile.profile.gem.toString()}
                 </span>

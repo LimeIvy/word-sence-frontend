@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQuery } from "convex/react";
-import { Gem, Loader2, Plus } from "lucide-react";
+import { CirclePoundSterling, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
@@ -112,7 +112,7 @@ export function SellCardModal() {
             <div className="space-y-2">
               <Label htmlFor="price">価格（ジェム）</Label>
               <div className="flex items-center gap-2">
-                <Gem className="size-5 text-amber-600" />
+                <CirclePoundSterling className="size-5" />
                 <Input
                   id="price"
                   type="number"
