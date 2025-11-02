@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { useMutation, useQuery } from "convex/react";
 import { Save } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import type { Card } from "../../common/types/card";
@@ -88,20 +88,113 @@ export default function BuildDeck() {
     }
   }, [deck, ownedCards]);
 
-  if (!user) {
-    return <div>User not found</div>;
-  }
-
-  if (deck === undefined || ownedCards === undefined) {
+  // ローディング状態: user, deck, ownedCardsがundefinedの時
+  if (user === undefined || deck === undefined || ownedCards === undefined) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">読み込み中...</p>
+      <div className="flex items-center justify-center h-full relative">
+        {/* ローディング中のプレースホルダー */}
+        <div className="relative rounded-lg p-8 select-none">
+          {/* 背景 - 和風スタイル */}
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: "linear-gradient(135deg, rgba(139,115,85,0.15), rgba(101,84,63,0.2))",
+              border: "2px solid rgba(218,165,32,0.3)",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2)",
+            }}
+          />
+          {/* 和紙テクスチャ */}
+          <div
+            className="absolute inset-0 rounded-lg opacity-20"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 10px,
+                  rgba(255,245,230,0.1) 10px,
+                  rgba(255,245,230,0.1) 20px
+                )
+              `,
+            }}
+          />
+          {/* ローディングアニメーション */}
+          <div className="relative flex flex-col items-center justify-center gap-4">
+            <div
+              className="w-16 h-16 border-4 border-t-amber-600 border-r-amber-500 border-b-amber-400 border-l-transparent rounded-full animate-spin"
+              style={{
+                borderWidth: "4px",
+              }}
+            />
+            <div
+              className="text-base font-semibold"
+              style={{
+                color: "#654321",
+                textShadow: "0 1px 2px rgba(255,255,255,0.5)",
+              }}
+            >
+              読み込み中...
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!deck) {
-    return <div>Deck not found</div>;
+  // ユーザーが見つからない場合（認証エラーなど）
+  if (user === null) {
+    return (
+      <div className="flex items-center justify-center h-full relative">
+        <div className="relative rounded-lg p-8 select-none">
+          {/* 背景 - 和風スタイル */}
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: "linear-gradient(135deg, rgba(139,115,85,0.15), rgba(101,84,63,0.2))",
+              border: "2px solid rgba(218,165,32,0.3)",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2)",
+            }}
+          />
+          <div
+            className="text-lg font-semibold"
+            style={{
+              color: "#654321",
+              textShadow: "0 1px 2px rgba(255,255,255,0.5)",
+            }}
+          >
+            ユーザー情報が見つかりません
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // デッキが見つからない場合
+  if (deck === null) {
+    return (
+      <div className="flex items-center justify-center h-full relative">
+        <div className="relative rounded-lg p-8 select-none">
+          {/* 背景 - 和風スタイル */}
+          <div
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: "linear-gradient(135deg, rgba(139,115,85,0.15), rgba(101,84,63,0.2))",
+              border: "2px solid rgba(218,165,32,0.3)",
+              boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2)",
+            }}
+          />
+          <div
+            className="text-lg font-semibold"
+            style={{
+              color: "#654321",
+              textShadow: "0 1px 2px rgba(255,255,255,0.5)",
+            }}
+          >
+            デッキが見つかりません
+          </div>
+        </div>
+      </div>
+    );
   }
 
   /**
@@ -159,7 +252,7 @@ export default function BuildDeck() {
         })),
       });
       setHasUnsavedChanges(false);
-      alert("デッキを保存しました");
+      toast.success("デッキを保存しました");
     } catch (error) {
       console.error("デッキ保存エラー:", error);
       alert("デッキの保存に失敗しました");
@@ -286,25 +379,123 @@ export default function BuildDeck() {
     <div className="flex flex-col max-w-6xl mx-auto gap-4 h-[calc(90vh-5.5rem)] overflow-hidden mb-10">
       {/* 保存ボタン */}
       <div className="flex justify-end p-4">
-        <Button
+        <button
           onClick={handleSaveDeck}
           disabled={!hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize}
-          className="flex items-center gap-2"
+          className="relative px-6 py-3 rounded-lg font-semibold text-base transition-all overflow-hidden select-none disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            background:
+              !hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize
+                ? "linear-gradient(135deg, rgba(75,75,75,0.9), rgba(50,50,50,0.9))"
+                : "linear-gradient(135deg, rgba(139,69,19,0.95), rgba(101,67,33,0.9))",
+            border:
+              !hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize
+                ? "2px solid rgba(100,100,100,0.6)"
+                : "2px solid rgba(218,165,32,0.6)",
+            boxShadow:
+              !hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize
+                ? "0 2px 8px rgba(0,0,0,0.3)"
+                : "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,245,230,0.2)",
+            cursor:
+              !hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize
+                ? "not-allowed"
+                : "pointer",
+          }}
+          onMouseEnter={(e) => {
+            if (hasUnsavedChanges && !isLoading && localDeck.length >= maxDeckSize) {
+              e.currentTarget.style.transform = "scale(1.02)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 16px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,245,230,0.2), 0 0 8px rgba(218,165,32,0.3)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (hasUnsavedChanges && !isLoading && localDeck.length >= maxDeckSize) {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,245,230,0.2)";
+            }
+          }}
         >
-          <Save className="w-4 h-4" />
-          {isLoading
-            ? "保存中..."
-            : localDeck.length < maxDeckSize
-              ? `デッキを保存 (${localDeck.length}/${maxDeckSize}枚)`
-              : "デッキを保存"}
-        </Button>
+          {/* 和紙テクスチャ */}
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(
+                  45deg,
+                  transparent,
+                  transparent 10px,
+                  rgba(255,245,230,0.1) 10px,
+                  rgba(255,245,230,0.1) 20px
+                )
+              `,
+            }}
+          />
+          <span
+            className="relative flex items-center gap-2"
+            style={{
+              color:
+                !hasUnsavedChanges || isLoading || localDeck.length < maxDeckSize
+                  ? "#D3D3D3"
+                  : "#F5DEB3",
+              textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+            }}
+          >
+            <Save className="w-4 h-4" />
+            {isLoading
+              ? "保存中..."
+              : localDeck.length < maxDeckSize
+                ? `デッキを保存 (${localDeck.length}/${maxDeckSize}枚)`
+                : "デッキを保存"}
+          </span>
+        </button>
       </div>
 
       <div className="flex flex-row gap-4 flex-1 overflow-hidden">
         {isLoading && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-4 rounded-lg">
-              <p className="text-lg">保存中...</p>
+            <div
+              className="relative rounded-lg p-8 select-none"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(255,248,235,0.98), rgba(255,245,230,0.95))",
+                border: "3px solid rgba(101,67,33,0.6)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+              }}
+            >
+              {/* 和紙テクスチャ */}
+              <div
+                className="absolute inset-0 rounded-lg opacity-10"
+                style={{
+                  backgroundImage: `
+                    repeating-linear-gradient(
+                      45deg,
+                      transparent,
+                      transparent 10px,
+                      rgba(255,245,230,0.1) 10px,
+                      rgba(255,245,230,0.1) 20px
+                    )
+                  `,
+                }}
+              />
+              {/* ローディングアニメーション */}
+              <div className="relative flex flex-col items-center justify-center gap-4">
+                <div
+                  className="w-16 h-16 border-4 border-t-amber-600 border-r-amber-500 border-b-amber-400 border-l-transparent rounded-full animate-spin"
+                  style={{
+                    borderWidth: "4px",
+                  }}
+                />
+                <div
+                  className="text-lg font-semibold"
+                  style={{
+                    color: "#654321",
+                    textShadow: "0 1px 2px rgba(255,255,255,0.5)",
+                  }}
+                >
+                  保存中...
+                </div>
+              </div>
             </div>
           </div>
         )}
