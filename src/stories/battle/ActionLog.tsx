@@ -1,3 +1,5 @@
+import React from "react";
+
 export type ActionType =
   | "card_exchange_deck"
   | "card_exchange_pool"
@@ -51,7 +53,7 @@ const ACTION_LABELS: Record<ActionType, string> = {
   ready: "準備完了しました",
 };
 
-export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProps) => {
+export const ActionLog = React.memo(({ logs, maxItems = 10, className = "" }: ActionLogProps) => {
   const displayLogs = logs.slice(-maxItems).reverse(); // 最新のものが上に来るように
 
   return (
@@ -252,4 +254,6 @@ export const ActionLog = ({ logs, maxItems = 10, className = "" }: ActionLogProp
       </div>
     </div>
   );
-};
+});
+
+ActionLog.displayName = "ActionLog";

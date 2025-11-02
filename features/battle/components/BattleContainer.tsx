@@ -179,7 +179,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     }
   }, [battle?.game_status]);
 
-  // バトル結果モーダルが閉じられたときに/battleにリダイレクト
+  // バトル結果モーダルが閉じられたときに/gameにリダイレクト
   useEffect(() => {
     if (
       battle?.game_status === "finished" &&
@@ -187,7 +187,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
       !isBattleResultModalOpen
     ) {
       // モーダルが閉じられたらリダイレクト
-      router.push("/battle");
+      router.push("/game");
     }
   }, [battle?.game_status, isBattleResultModalOpen, router]);
 
@@ -197,6 +197,27 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     return myUserWithProfile.profile.name || "あなた";
   }, [myUserWithProfile?.profile?.name]);
   const opponentName = "相手"; // TODO: 相手のユーザー情報を取得
+
+  // currentPhaseの取得（早期リターン前に定義）
+  const currentPhase = battle?.current_phase ?? "field_card_presentation";
+
+  // カード選択ハンドラー（早期リターン前に定義）
+  const handleCardSelect = useCallback(
+    (cardId: string) => {
+      if (currentPhase === "word_submission") {
+        setSelectedCardId((prev) => (prev === cardId ? undefined : cardId));
+      } else {
+        setSelectedCardIds((prev) => {
+          if (prev.includes(cardId)) {
+            return prev.filter((id) => id !== cardId);
+          } else {
+            return [...prev, cardId];
+          }
+        });
+      }
+    },
+    [currentPhase]
+  );
 
   // HandArea用のカードデータ変換
   const handAreaCards = useMemo(() => {
@@ -366,7 +387,6 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     );
   }
 
-  const currentPhase = battle.current_phase;
   const myScore = Number(myPlayer.score);
   const opponentScore = Number(opponentPlayer.score);
   const maxTime = 60; // フェーズごとの最大時間（秒）
@@ -446,17 +466,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
                       : selectedCardIds
                   }
                   multiSelect={currentPhase === "player_action"}
-                  onCardSelect={(cardId) => {
-                    if (currentPhase === "word_submission") {
-                      setSelectedCardId(cardId === selectedCardId ? undefined : cardId);
-                    } else {
-                      if (selectedCardIds.includes(cardId)) {
-                        setSelectedCardIds(selectedCardIds.filter((id) => id !== cardId));
-                      } else {
-                        setSelectedCardIds([...selectedCardIds, cardId]);
-                      }
-                    }
-                  }}
+                  onCardSelect={handleCardSelect}
                   showSimilarity={currentPhase === "word_submission"}
                   playerName={myName}
                   deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
@@ -494,7 +504,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
               <button
                 onClick={() => handleNormalSubmit(selectedCardId)}
                 disabled={isActionLoading}
-                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none cursor-pointer disabled:cursor-not-allowed"
                 style={{
                   background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
                   border: "2px solid rgba(96,165,250,0.7)",
@@ -507,7 +517,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
               <button
                 onClick={() => handleVictoryDeclaration(selectedCardId)}
                 disabled={isActionLoading}
-                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
+                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none cursor-pointer disabled:cursor-not-allowed"
                 style={{
                   background: "linear-gradient(135deg, rgba(239,68,68,0.95), rgba(185,28,28,0.9))",
                   border: "2px solid rgba(248,113,113,0.7)",

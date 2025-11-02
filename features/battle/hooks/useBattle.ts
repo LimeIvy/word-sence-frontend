@@ -84,6 +84,7 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
   // アクション
   const generateWordAction = useAction(api.battle.generateWordAction);
   const calculateSimilarityPreviewAction = useAction(api.battle.calculateSimilarityPreview);
+  const calculateSimilarityScoreAction = useAction(api.battle.calculateSimilarityScoreAction);
 
   // カード情報を取得（手札とお題カード）
   const cardIds = useMemo(() => {
@@ -266,13 +267,31 @@ export function useBattle({ battleId, myUserId }: UseBattleOptions): UseBattleRe
       return;
     }
 
+    if (!cardMap || !preparedData) {
+      toast.error("カード情報が取得できません");
+      return;
+    }
+
+    const submittedCard = cardMap.get(cardId as Id<"card">);
+    if (!submittedCard) {
+      toast.error("提出するカードが見つかりません");
+      return;
+    }
+
     setIsActionLoading(true);
     try {
+      // お題カードと提出カードの類似度を計算
+      const similarityScore = await calculateSimilarityScoreAction({
+        fieldCardText: preparedData.fieldCardText,
+        submittedCardText: submittedCard.text,
+      });
+
       await submitCardMutation({
         battle_id: battleId,
         user_id: user._id,
         card_id: cardId as Id<"card">,
         submission_type: submissionType,
+        similarity_score: similarityScore,
       });
       toast.success(
         submissionType === "victory_declaration" ? "勝利宣言を提出しました" : "カードを提出しました"

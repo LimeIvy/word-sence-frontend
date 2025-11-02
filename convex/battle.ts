@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./user";
 
 const submissionTypeValidator = v.union(v.literal("normal"), v.literal("victory_declaration"));
@@ -157,19 +157,56 @@ export const calculateSimilarityScoreAction = action({
 });
 
 /**
- * 類似度スコアを計算（ヘルパー関数）
- * mutation内では直接外部APIを呼び出せないため、フォールバック値を返す
- * 実際の計算はクライアント側でactionを呼び出す必要がある
- * @deprecated この関数は使用されていません。クライアント側でcalculateSimilarityScoreActionを直接呼び出してください。
+ * 類似度スコアを計算（internalAction）
+ * mutation内から呼び出し可能な内部アクション
  */
-async function calculateSimilarityScore(): Promise<number> {
-  // Mutation内では外部APIを直接呼び出せないため、デフォルト値を返す
-  // 実際の計算はsubmitCard呼び出し前にクライアント側でactionを呼び出す必要がある
-  console.warn(
-    "calculateSimilarityScore called from mutation - returning default value. Use action from client side."
-  );
-  return 0.5;
-}
+export const calculateSimilarityScoreInternal = internalAction({
+  args: {
+    fieldCardText: v.string(),
+    submittedCardText: v.string(),
+  },
+  handler: async (ctx, { fieldCardText, submittedCardText }) => {
+    const API_BASE_URL = process.env.API_BASE_URL;
+    if (!API_BASE_URL) {
+      console.warn("環境変数 API_BASE_URLが設定されていません。デフォルト値(0.5)を返します。");
+      return 0.5;
+    }
+
+    // URLの末尾スラッシュを正規化
+    const baseUrl = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
+    try {
+      const response = await fetch(`${baseUrl}/similarity`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          word1: fieldCardText,
+          word2: submittedCardText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Word2Vecの類似度は-1〜1の範囲なので、0〜1に正規化
+      const normalizedScore = (data.result + 1) / 2;
+      return Math.max(0, Math.min(1, normalizedScore));
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error(`Similarity API error:`, error.message);
+      } else {
+        console.error(`Similarity API error:`, error);
+      }
+      // エラー時はデフォルト値（0.5）を返す
+      return 0.5;
+    }
+  },
+});
 
 /**
  * 単語生成（Action）
@@ -737,8 +774,9 @@ export const submitCard = mutation({
     user_id: v.id("user"),
     card_id: v.id("card"),
     submission_type: submissionTypeValidator,
+    similarity_score: v.optional(v.number()),
   },
-  handler: async (ctx, { battle_id, user_id, card_id, submission_type }) => {
+  handler: async (ctx, { battle_id, user_id, card_id, submission_type, similarity_score }) => {
     // 認証チェック：現在のユーザーを取得し、指定されたuser_idと一致するか確認
     const currentUser = await getCurrentUserOrThrow(ctx);
     verifyUserAuthentication(currentUser._id, user_id);
@@ -779,8 +817,13 @@ export const submitCard = mutation({
     const isDeckCard = deckCards.includes(card_id);
 
     // スコア計算
-    // TODO: クライアント側でcalculateSimilarityScoreActionを呼び出してスコアを計算し、mutationに渡す
-    const similarityScore = await calculateSimilarityScore();
+    // クライアント側でcalculateSimilarityScoreActionを呼び出してスコアを計算し、mutationに渡す
+    const similarityScore = similarity_score ?? 0.5;
+    if (similarity_score === undefined) {
+      console.warn(
+        "similarity_scoreが提供されていません。クライアント側でcalculateSimilarityScoreActionを呼び出してください。"
+      );
+    }
     const rarityBonus = isDeckCard ? getRarityBonus(submittedCard.rarity) : 0;
     const finalScore = calculateFinalScore(similarityScore, rarityBonus);
 
@@ -1408,18 +1451,47 @@ export const startNextRound = mutation({
     // 新しいお題カードを選択
     const newFieldCard = await getRandomFieldCard(ctx);
 
-    // プレイヤー状態をリセット
-    const resetPlayers = battle.players.map((player) => ({
-      ...player,
-      turn_state: {
-        actions_remaining: 3n,
-        actions_log: [],
-        deck_cards_remaining: player.turn_state.deck_cards_remaining,
-      },
-      submitted_card: undefined,
-      is_ready: false,
-      last_action_time: Date.now(),
-    }));
+    // プレイヤー状態をリセット（手札を5枚に補充）
+    const resetPlayers = await Promise.all(
+      battle.players.map(async (player) => {
+        const deckCards = await getDeckCards(ctx, player.deck_ref);
+        const usedCards = new Set(player.hand);
+        const availableCards = deckCards.filter((cardId) => !usedCards.has(cardId));
+
+        // 現在の手札枚数
+        const currentHandSize = player.hand.length;
+        // 5枚に補充するために必要な枚数
+        const cardsToDraw = Math.max(0, 5 - currentHandSize);
+
+        // 必要な分だけカードを引く
+        const newHand = [...player.hand];
+        if (cardsToDraw > 0) {
+          if (availableCards.length < cardsToDraw) {
+            // デッキにカードが足りない場合は利用可能な分だけ引く
+            newHand.push(...availableCards.slice(0, cardsToDraw));
+          } else {
+            newHand.push(...availableCards.slice(0, cardsToDraw));
+          }
+        }
+
+        // デッキの残り枚数を更新
+        const remainingDeck = deckCards.filter((cardId) => !newHand.includes(cardId));
+        const newDeckCardsRemaining = BigInt(remainingDeck.length);
+
+        return {
+          ...player,
+          hand: newHand,
+          turn_state: {
+            actions_remaining: 3n,
+            actions_log: [],
+            deck_cards_remaining: newDeckCardsRemaining,
+          },
+          submitted_card: undefined,
+          is_ready: false,
+          last_action_time: Date.now(),
+        };
+      })
+    );
 
     // 次のラウンドへ
     await ctx.db.patch(battle_id, {
@@ -1500,8 +1572,12 @@ export const checkPhaseTimeout = mutation({
             const deckCards = await getDeckCards(ctx, player.deck_ref);
             const isDeckCard = deckCards.includes(randomCard);
 
-            // TODO: クライアント側でcalculateSimilarityScoreActionを呼び出してスコアを計算し、mutationに渡す
-            const similarityScore = await calculateSimilarityScore();
+            // 類似度スコアを計算（タイムアウト時はinternalActionを呼び出せないため、デフォルト値を使用）
+            // 注: Mutation内からはinternalActionを直接呼び出せないため、
+            // タイムアウト時の自動提出ではデフォルト値（0.5）を使用します
+            // 通常の提出ではクライアント側でcalculateSimilarityScoreActionを呼び出すため、
+            // 正確なスコアが計算されます
+            const similarityScore = 0.5;
             const rarityBonus = isDeckCard ? getRarityBonus(cardData.rarity) : 0;
             const finalScore = calculateFinalScore(similarityScore, rarityBonus);
 
@@ -1582,18 +1658,47 @@ export const checkPhaseTimeout = mutation({
             // 新しいお題カードを選択
             const newFieldCard = await getRandomFieldCard(ctx);
 
-            // プレイヤー状態をリセット
-            const resetPlayers = updatedBattle.players.map((player) => ({
-              ...player,
-              turn_state: {
-                actions_remaining: 3n,
-                actions_log: [],
-                deck_cards_remaining: player.turn_state.deck_cards_remaining,
-              },
-              submitted_card: undefined,
-              is_ready: false,
-              last_action_time: Date.now(),
-            }));
+            // プレイヤー状態をリセット（手札を5枚に補充）
+            const resetPlayers = await Promise.all(
+              updatedBattle.players.map(async (player) => {
+                const deckCards = await getDeckCards(ctx, player.deck_ref);
+                const usedCards = new Set(player.hand);
+                const availableCards = deckCards.filter((cardId) => !usedCards.has(cardId));
+
+                // 現在の手札枚数
+                const currentHandSize = player.hand.length;
+                // 5枚に補充するために必要な枚数
+                const cardsToDraw = Math.max(0, 5 - currentHandSize);
+
+                // 必要な分だけカードを引く
+                const newHand = [...player.hand];
+                if (cardsToDraw > 0) {
+                  if (availableCards.length < cardsToDraw) {
+                    // デッキにカードが足りない場合は利用可能な分だけ引く
+                    newHand.push(...availableCards.slice(0, cardsToDraw));
+                  } else {
+                    newHand.push(...availableCards.slice(0, cardsToDraw));
+                  }
+                }
+
+                // デッキの残り枚数を更新
+                const remainingDeck = deckCards.filter((cardId) => !newHand.includes(cardId));
+                const newDeckCardsRemaining = BigInt(remainingDeck.length);
+
+                return {
+                  ...player,
+                  hand: newHand,
+                  turn_state: {
+                    actions_remaining: 3n,
+                    actions_log: [],
+                    deck_cards_remaining: newDeckCardsRemaining,
+                  },
+                  submitted_card: undefined,
+                  is_ready: false,
+                  last_action_time: Date.now(),
+                };
+              })
+            );
 
             // 次のラウンドへ
             await ctx.db.patch(battle_id, {

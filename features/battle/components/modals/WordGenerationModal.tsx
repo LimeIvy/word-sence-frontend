@@ -124,7 +124,7 @@ export function WordGenerationModal({
               <Label className="text-base font-semibold">+ゾーン（意味を加算）</Label>
               <span className="text-sm text-gray-600">{positiveCardIds.length}枚選択中</span>
             </div>
-            <div className="flex justify-center gap-3 px-4 py-6 bg-green-50 rounded-lg border-2 border-dashed border-green-300 min-h-[160px]">
+            <div className="flex items-center justify-center gap-3 px-4 py-6 bg-green-50 rounded-lg border-2 border-dashed border-green-300 min-h-[160px]">
               {positiveCardIds.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <span className="text-2xl mb-1">+</span>
@@ -161,7 +161,7 @@ export function WordGenerationModal({
               <span className="text-sm text-gray-600">{negativeCardIds.length}枚選択中</span>
             </div>
             <div
-              className="flex justify-center gap-3 px-4 py-6 bg-red-50 rounded-lg border-2 border-dashed border-red-300 min-h-[160px] cursor-pointer"
+              className="flex items-center justify-center gap-3 px-4 py-6 bg-red-50 rounded-lg border-2 border-dashed border-red-300 min-h-[160px] cursor-pointer"
               onClick={(e) => {
                 // 未選択カードを右クリックまたはShift+クリックで-ゾーンに追加する機能は、未選択カードエリアで処理
                 if (e.target === e.currentTarget) {

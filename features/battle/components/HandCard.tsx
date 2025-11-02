@@ -265,7 +265,7 @@ export function HandCard({
           {/* デッキカードアイコン */}
           {isDeckCard && (
             <div
-              className="absolute top-1 left-1 text-xl"
+              className="absolute top-1 right-1 text-xl"
               style={{
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))",
               }}
@@ -277,10 +277,7 @@ export function HandCard({
           {/* レアリティ印章 */}
           <div
             aria-label={`レアリティ: ${rarity}`}
-            className={`absolute top-1 right-1 flex items-center justify-center font-black ${fontSizes.badgeSize}`}
-            style={{
-              position: "relative",
-            }}
+            className={`absolute top-1 left-1 flex items-center justify-center font-black ${fontSizes.badgeSize}`}
           >
             {/* 梅の花 */}
             <div
