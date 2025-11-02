@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Gem, X } from "lucide-react";
+import { CirclePoundSterling, X } from "lucide-react";
 import { WordCard } from "../../common/components/wordCard";
 import { mapRarityToJapanese } from "../../deck/utils/rarity-utils";
 import { MyListing } from "../types/market";
@@ -42,7 +42,7 @@ export function MyListingCard({ listing, onCancel, isLoading }: MyListingCardPro
         <div className={`text-sm font-bold ${statusColor}`}>{statusText}</div>
 
         <div className="flex items-center gap-1 text-lg font-bold text-amber-600">
-          <Gem className="size-5" />
+          <CirclePoundSterling className="size-5" />
           <span>{listing.price.toString()}</span>
         </div>
 
