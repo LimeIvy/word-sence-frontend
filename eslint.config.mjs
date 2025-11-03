@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from "eslint-plugin-storybook";
+
 import { FlatCompat } from "@eslint/eslintrc";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -18,11 +21,9 @@ const eslintConfig = [
     "plugin:react-hooks/recommended",
     "plugin:prettier/recommended"
   ),
-
   {
     ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"],
   },
-
   {
     files: ["**/*.{ts,tsx}"],
     rules: {
@@ -46,7 +47,6 @@ const eslintConfig = [
       ],
     },
   },
-
   {
     files: ["**/*.ts"],
     rules: {
@@ -59,7 +59,6 @@ const eslintConfig = [
       ],
     },
   },
-
   {
     files: ["**/app/api/**/*.ts"],
     rules: {
@@ -72,7 +71,6 @@ const eslintConfig = [
       ],
     },
   },
-
   {
     files: ["**/*.tsx"],
     rules: {
@@ -85,7 +83,6 @@ const eslintConfig = [
       ],
     },
   },
-
   {
     files: ["**/shadcn/**/*"],
     rules: {
@@ -98,6 +95,7 @@ const eslintConfig = [
       ],
     },
   },
+  ...storybook.configs["flat/recommended"],
 ];
 
 export default eslintConfig;

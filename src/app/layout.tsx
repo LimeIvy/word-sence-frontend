@@ -1,5 +1,8 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Serif_JP } from "next/font/google";
+import ConvexClientProvider from "./ConvexClientProvider";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +13,14 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoSerifJP = Noto_Serif_JP({
+  variable: "--font-noto-serif-jp",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -24,7 +35,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${notoSerifJP.variable} antialiased bg-washi min-h-screen`}
+      >
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          signInUrl="/signin"
+          signUpUrl="/signup"
+          afterSignInUrl="/"
+          afterSignUpUrl="/"
+          afterSignOutUrl="/signin"
+          appearance={{
+            elements: {
+              captcha: {
+                display: "none",
+              },
+            },
+          }}
+        >
+          <ConvexClientProvider>{children}</ConvexClientProvider>
+        </ClerkProvider>
+      </body>
     </html>
   );
 }
