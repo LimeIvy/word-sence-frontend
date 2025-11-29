@@ -380,12 +380,12 @@ function calculatePoints(
     if (score1 > score2) {
       return [
         { user_id: player1.user_id, points: 1n, reason: "normal_win" },
-        { user_id: player2.user_id, points: -1n, reason: "normal_lose" },
+        { user_id: player2.user_id, points: 0n, reason: "normal_lose" },
       ];
     }
     if (score2 > score1) {
       return [
-        { user_id: player1.user_id, points: -1n, reason: "normal_lose" },
+        { user_id: player1.user_id, points: 0n, reason: "normal_lose" },
         { user_id: player2.user_id, points: 1n, reason: "normal_win" },
       ];
     }
