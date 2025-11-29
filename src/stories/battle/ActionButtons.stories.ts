@@ -28,7 +28,6 @@ export const Initial: Story = {
   args: {
     exchangeDisabled: false,
     generateDisabled: false,
-    readyDisabled: false,
     deckRemaining: 15,
   },
 };
@@ -38,7 +37,6 @@ export const OneActionLeft: Story = {
   args: {
     exchangeDisabled: false,
     generateDisabled: false,
-    readyDisabled: false,
     deckRemaining: 10,
   },
 };
@@ -48,7 +46,6 @@ export const NoActionsLeft: Story = {
   args: {
     exchangeDisabled: true,
     generateDisabled: true,
-    readyDisabled: false,
     deckRemaining: 8,
   },
 };
@@ -58,7 +55,6 @@ export const DeckEmpty: Story = {
   args: {
     exchangeDisabled: true,
     generateDisabled: false,
-    readyDisabled: false,
     deckRemaining: 0,
   },
 };
@@ -68,7 +64,6 @@ export const ReadyOnly: Story = {
   args: {
     exchangeDisabled: true,
     generateDisabled: true,
-    readyDisabled: false,
   },
 };
 
@@ -77,7 +72,6 @@ export const AllDisabled: Story = {
   args: {
     exchangeDisabled: true,
     generateDisabled: true,
-    readyDisabled: true,
     deckRemaining: 0,
   },
 };
