@@ -33,6 +33,55 @@ async function getDeckCards(
 }
 
 /**
+ * デッキまたはプールからカードをドロー
+ * デッキから可能な限り引き、不足分はプールから引く
+ */
+async function drawCardsFromDeckOrPool(
+  ctx: MutationCtx,
+  deckId: Id<"deck">,
+  currentHand: Id<"card">[],
+  count: number
+): Promise<{ drawnCards: Id<"card">[]; deckCardsDrawn: number }> {
+  const deckCards = await getDeckCards(ctx, deckId);
+  const usedCards = new Set(currentHand);
+  const availableDeckCards = deckCards.filter((cardId) => !usedCards.has(cardId));
+
+  const drawnCards: Id<"card">[] = [];
+  let deckCardsDrawn = 0;
+
+  // 1. デッキから可能な限り引く
+  const fromDeckCount = Math.min(availableDeckCards.length, count);
+  if (fromDeckCount > 0) {
+    drawnCards.push(...availableDeckCards.slice(0, fromDeckCount));
+    deckCardsDrawn = fromDeckCount;
+  }
+
+  // 2. 不足分をプールから引く
+  const remainingCount = count - deckCardsDrawn;
+  if (remainingCount > 0) {
+    const allCards = await ctx.db.query("card").collect();
+    const cardIds = allCards.map((c) => c._id);
+
+    // 手札やすでに引いたカードと重複しないようにプールから選択
+    const cardsInHandAndDrawn = new Set([...currentHand, ...drawnCards]);
+    const availablePoolCards = cardIds.filter((id) => !cardsInHandAndDrawn.has(id));
+
+    // シャッフル
+    for (let i = availablePoolCards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [availablePoolCards[i], availablePoolCards[j]] = [
+        availablePoolCards[j],
+        availablePoolCards[i],
+      ];
+    }
+
+    drawnCards.push(...availablePoolCards.slice(0, remainingCount));
+  }
+
+  return { drawnCards, deckCardsDrawn };
+}
+
+/**
  * ランダムなカードを1枚取得
  */
 async function getRandomFieldCard(ctx: MutationCtx): Promise<Id<"card">> {
@@ -1041,21 +1090,14 @@ export const exchangeCards = mutation({
     let drawnCards: Id<"card">[] = [];
 
     if (draw_source === "deck") {
-      // デッキからドロー
-      if (player.turn_state.deck_cards_remaining < BigInt(discard_card_ids.length)) {
-        throw new Error("デッキに十分なカードがありません");
-      }
-
-      const deckCards = await getDeckCards(ctx, player.deck_ref);
-      const usedCards = new Set([...player.hand]);
-      const availableCards = deckCards.filter((cardId) => !usedCards.has(cardId));
-
-      // 利用可能なカードが十分にあるか確認
-      if (availableCards.length < discard_card_ids.length) {
-        throw new Error("デッキに利用可能なカードが不足しています");
-      }
-
-      drawnCards = availableCards.slice(0, discard_card_ids.length);
+      // デッキからドロー（不足分はプールから）
+      const result = await drawCardsFromDeckOrPool(
+        ctx,
+        player.deck_ref,
+        player.hand,
+        discard_card_ids.length
+      );
+      drawnCards = result.drawnCards;
     } else {
       // プールからランダムドロー
       const allCards = await ctx.db.query("card").collect();
@@ -1465,12 +1507,13 @@ export const startNextRound = mutation({
         // 必要な分だけカードを引く
         const newHand = [...player.hand];
         if (cardsToDraw > 0) {
-          if (availableCards.length < cardsToDraw) {
-            // デッキにカードが足りない場合は利用可能な分だけ引く
-            newHand.push(...availableCards.slice(0, cardsToDraw));
-          } else {
-            newHand.push(...availableCards.slice(0, cardsToDraw));
-          }
+          const result = await drawCardsFromDeckOrPool(
+            ctx,
+            player.deck_ref,
+            player.hand,
+            cardsToDraw
+          );
+          newHand.push(...result.drawnCards);
         }
 
         // デッキの残り枚数を更新
@@ -1895,11 +1938,13 @@ export const autoAdvancePhasesCron = mutation({
 
                 const newHand = [...player.hand];
                 if (cardsToDraw > 0) {
-                  if (availableCards.length < cardsToDraw) {
-                    newHand.push(...availableCards.slice(0, cardsToDraw));
-                  } else {
-                    newHand.push(...availableCards.slice(0, cardsToDraw));
-                  }
+                  const result = await drawCardsFromDeckOrPool(
+                    ctx,
+                    player.deck_ref,
+                    player.hand,
+                    cardsToDraw
+                  );
+                  newHand.push(...result.drawnCards);
                 }
 
                 const remainingDeck = deckCards.filter((cardId) => !newHand.includes(cardId));
