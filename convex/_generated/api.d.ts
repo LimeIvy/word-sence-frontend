@@ -10,6 +10,7 @@
 
 import type * as battle from "../battle.js";
 import type * as card from "../card.js";
+import type * as crons from "../crons.js";
 import type * as deck from "../deck.js";
 import type * as http from "../http.js";
 import type * as market from "../market.js";
@@ -33,6 +34,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   battle: typeof battle;
   card: typeof card;
+  crons: typeof crons;
   deck: typeof deck;
   http: typeof http;
   market: typeof market;

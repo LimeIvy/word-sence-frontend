@@ -1,4 +1,3 @@
-// axiosは使用しない（Convexのquery/mutation内ではsetTimeoutが使えないため）
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -1716,5 +1715,227 @@ export const checkPhaseTimeout = mutation({
     }
 
     return { timedOut: true };
+  },
+});
+
+/**
+ * フェーズ自動遷移(Cron用)
+ * cronジョブから定期的に呼び出され、アクティブなバトルのタイムアウトをチェック
+ */
+export const autoAdvancePhasesCron = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // アクティブなバトルを全て取得
+    const activeBattles = await ctx.db
+      .query("battle")
+      .withIndex("by_status", (q) => q.eq("game_status", "active"))
+      .collect();
+
+    // 実行確認用ログ（5秒ごとに表示されます）
+    console.log(`[Cron] Phase timeout check. Active battles: ${activeBattles.length}`);
+
+    let processedCount = 0;
+
+    for (const battle of activeBattles) {
+      // タイムアウトチェック
+      if (!isPhaseTimedOut(battle.phase_start_time, battle.current_phase)) {
+        continue;
+      }
+
+      processedCount++;
+      console.log(`[Cron] Timeout detected! Battle: ${battle._id}, Phase: ${battle.current_phase}`);
+
+      // タイムアウト処理
+      switch (battle.current_phase) {
+        case "field_card_presentation":
+          console.log(`[Cron] ${battle._id}: field_card_presentation -> player_action`);
+          // 自動的に次のフェーズへ
+          await ctx.db.patch(battle._id, {
+            current_phase: "player_action",
+            phase_start_time: Date.now(),
+            updated_at: Date.now(),
+          });
+          break;
+
+        case "player_action":
+          console.log(`[Cron] ${battle._id}: player_action -> word_submission (forcing ready)`);
+          // 未準備のプレイヤーを強制的に準備完了
+          const updatedPlayers = battle.players.map((p) => ({ ...p, is_ready: true }));
+          await ctx.db.patch(battle._id, {
+            players: updatedPlayers,
+            current_phase: "word_submission",
+            phase_start_time: Date.now(),
+            updated_at: Date.now(),
+          });
+          break;
+
+        case "word_submission": {
+          console.log(`[Cron] ${battle._id}: word_submission processing...`);
+          // 未提出のプレイヤーはランダムなカードを提出
+          const updatedPlayersSubmission = await Promise.all(
+            battle.players.map(async (player) => {
+              if (player.submitted_card) return player;
+
+              // ランダムにカードを選択
+              const randomCard = player.hand[Math.floor(Math.random() * player.hand.length)];
+              const cardData = await getCardOrThrow(ctx, randomCard);
+
+              // デッキカードかどうか判定
+              const deckCards = await getDeckCards(ctx, player.deck_ref);
+              const isDeckCard = deckCards.includes(randomCard);
+
+              // タイムアウト時はデフォルト値を使用
+              const similarityScore = 0.5;
+              const rarityBonus = isDeckCard ? getRarityBonus(cardData.rarity) : 0;
+              const finalScore = calculateFinalScore(similarityScore, rarityBonus);
+
+              return {
+                ...player,
+                submitted_card: {
+                  card_id: randomCard,
+                  submission_type: "normal" as const,
+                  similarity_score: similarityScore,
+                  rarity_bonus: rarityBonus,
+                  final_score: finalScore,
+                  is_deck_card: isDeckCard,
+                },
+                last_action_time: Date.now(),
+              };
+            })
+          );
+
+          // 勝利宣言があるかチェック
+          const hasDeclaration = updatedPlayersSubmission.some(
+            (p) => p.submitted_card?.submission_type === "victory_declaration"
+          );
+
+          if (hasDeclaration) {
+            console.log(`[Cron] ${battle._id}: -> response (Victory Declaration)`);
+            // 対応フェーズへ移行
+            await ctx.db.patch(battle._id, {
+              players: updatedPlayersSubmission,
+              current_phase: "response",
+              phase_start_time: Date.now(),
+              responses: [],
+              updated_at: Date.now(),
+            });
+          } else {
+            console.log(`[Cron] ${battle._id}: -> point_calculation`);
+            // 判定フェーズへ移行
+            await ctx.db.patch(battle._id, {
+              players: updatedPlayersSubmission,
+              updated_at: Date.now(),
+            });
+            await transitionToPointCalculation(ctx, battle._id);
+          }
+          break;
+        }
+
+        case "response": {
+          console.log(`[Cron] ${battle._id}: response processing...`);
+          // 未応答のプレイヤーは自動的にコール
+          const declarerId = battle.players.find(
+            (p) => p.submitted_card?.submission_type === "victory_declaration"
+          )?.user_id;
+
+          const responses = battle.responses || [];
+          const nonDeclarers = battle.players.filter((p) => p.user_id !== declarerId);
+
+          nonDeclarers.forEach((player) => {
+            const hasResponded = responses.some((r) => r.user_id === player.user_id);
+            if (!hasResponded) {
+              responses.push({
+                user_id: player.user_id,
+                response_type: "call",
+                timestamp: Date.now(),
+              });
+            }
+          });
+
+          await ctx.db.patch(battle._id, {
+            responses,
+            updated_at: Date.now(),
+          });
+
+          await transitionToPointCalculation(ctx, battle._id);
+          break;
+        }
+
+        case "point_calculation": {
+          console.log(`[Cron] ${battle._id}: point_calculation processing...`);
+          // ポイント計算フェーズのタイムアウト処理
+          const updatedBattle = await ctx.db.get(battle._id);
+          if (!updatedBattle) break;
+
+          // 勝者がいるかチェック
+          const winner = updatedBattle.players.find((p) => hasPlayerWon(p.score));
+
+          if (winner) {
+            console.log(`[Cron] ${battle._id}: Game Finished! Winner: ${winner.user_id}`);
+            // ゲーム終了
+            await ctx.db.patch(battle._id, {
+              game_status: "finished",
+              winner_ids: [winner.user_id],
+              updated_at: Date.now(),
+            });
+          } else {
+            console.log(`[Cron] ${battle._id}: Starting next round...`);
+            // 新しいお題カードを選択
+            const newFieldCard = await getRandomFieldCard(ctx);
+
+            // プレイヤー状態をリセット
+            const resetPlayers = await Promise.all(
+              updatedBattle.players.map(async (player) => {
+                const deckCards = await getDeckCards(ctx, player.deck_ref);
+                const usedCards = new Set(player.hand);
+                const availableCards = deckCards.filter((cardId) => !usedCards.has(cardId));
+
+                const currentHandSize = player.hand.length;
+                const cardsToDraw = Math.max(0, 5 - currentHandSize);
+
+                const newHand = [...player.hand];
+                if (cardsToDraw > 0) {
+                  if (availableCards.length < cardsToDraw) {
+                    newHand.push(...availableCards.slice(0, cardsToDraw));
+                  } else {
+                    newHand.push(...availableCards.slice(0, cardsToDraw));
+                  }
+                }
+
+                const remainingDeck = deckCards.filter((cardId) => !newHand.includes(cardId));
+                const newDeckCardsRemaining = BigInt(remainingDeck.length);
+
+                return {
+                  ...player,
+                  hand: newHand,
+                  turn_state: {
+                    actions_remaining: 3n,
+                    actions_log: [],
+                    deck_cards_remaining: newDeckCardsRemaining,
+                  },
+                  submitted_card: undefined,
+                  is_ready: false,
+                  last_action_time: Date.now(),
+                };
+              })
+            );
+
+            // 次のラウンドへ
+            await ctx.db.patch(battle._id, {
+              current_round: updatedBattle.current_round + 1n,
+              current_phase: "field_card_presentation",
+              field_card_id: newFieldCard,
+              players: resetPlayers,
+              phase_start_time: Date.now(),
+              responses: undefined,
+              updated_at: Date.now(),
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    return { processedBattles: processedCount };
   },
 });
