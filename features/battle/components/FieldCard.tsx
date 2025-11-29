@@ -1,5 +1,7 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
+
 export interface FieldCardProps {
   /** お題の単語 */
   word: string;
@@ -58,7 +60,20 @@ export function FieldCard({
           >
             お題カード
           </span>
-          <span className="text-2xl select-none">🎴</span>
+          <a
+            href={`https://ja.wikipedia.org/wiki/${word}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer hover:scale-110 transition-transform"
+            onClick={(e) => e.stopPropagation()}
+            title={`${word}の意味を調べる`}
+          >
+            <BookOpen
+              size={18}
+              color="#FFF5E6"
+              style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))" }}
+            />
+          </a>
         </div>
       </div>
 
@@ -196,7 +211,7 @@ export function FieldCard({
 
           {/* 装飾的な上下の縁 */}
           <div
-            className="absolute inset-x-0 top-0 h-3 rounded-t-2xl"
+            className="absolute inset-x-0 top-0 h-3 rounded-t-2xl z-10"
             style={{
               background:
                 "linear-gradient(90deg, rgba(218,165,32,0.8) 0%, rgba(184,134,11,0.9) 50%, rgba(218,165,32,0.8) 100%)",
@@ -204,7 +219,7 @@ export function FieldCard({
             }}
           />
           <div
-            className="absolute inset-x-0 bottom-0 h-3 rounded-b-2xl"
+            className="absolute inset-x-0 bottom-0 h-3 rounded-b-2xl z-10"
             style={{
               background:
                 "linear-gradient(90deg, rgba(218,165,32,0.8) 0%, rgba(184,134,11,0.9) 50%, rgba(218,165,32,0.8) 100%)",

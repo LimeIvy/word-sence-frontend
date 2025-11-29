@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
 import { useState } from "react";
 import type { Card } from "../../common/types/card";
 import { mapRarityToJapanese } from "../../common/utils/rarity";
@@ -365,7 +366,7 @@ export function HandCard({
 
           {/* 下部装飾 */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-6"
+            className="absolute bottom-0 left-0 right-0 h-6 z-30"
             style={{
               background: `linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)`,
             }}
@@ -379,6 +380,22 @@ export function HandCard({
                 opacity="0.6"
               />
             </svg>
+
+            {/* Wikipediaリンク */}
+            <a
+              href={`https://ja.wikipedia.org/wiki/${card.name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-1 right-1 cursor-pointer hover:scale-110 transition-transform z-50"
+              onClick={(e) => e.stopPropagation()}
+              title={`${card.name}の意味を調べる`}
+            >
+              <BookOpen
+                size={14}
+                color="white"
+                style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))" }}
+              />
+            </a>
           </div>
         </div>
       </div>
