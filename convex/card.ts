@@ -138,7 +138,7 @@ export const getUserCards = query({
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
     if (!user) {
-      throw new Error("User not found");
+      return [];
     }
     return await ctx.db
       .query("user_card")
@@ -152,7 +152,7 @@ export const getUserCardsWithDetails = query({
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
     if (!user) {
-      throw new Error("User not found");
+      return [];
     }
 
     const userCards = await ctx.db

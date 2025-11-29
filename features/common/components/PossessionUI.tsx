@@ -7,7 +7,7 @@ import { api } from "../../../convex/_generated/api";
 export const PossessionUI = () => {
   const myUser = useQuery(api.user.getMyUserWithProfile);
   const myCards = useQuery(api.card.getUserCards);
-  if (!myUser || !myCards) return null;
+  if (!myUser || !myUser.profile || !myCards) return null;
   const { profile } = myUser;
   const gem = profile.gem.toString();
   const cardCount = myCards.length;

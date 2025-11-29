@@ -23,7 +23,7 @@ export const updateMyProfile = internalMutation({
   args: { name: v.string(), icon: v.string(), gem: v.number() },
   handler: async (ctx, { name, icon, gem }) => {
     const user = await getCurrentUserWithProfile(ctx);
-    if (user.profile === null) {
+    if (user === null || user.profile === null) {
       throw new Error("Profile not found");
     }
     await ctx.db.patch(user.profile._id, {
@@ -39,7 +39,7 @@ export const spendGems = mutation({
   args: { amount: v.number() },
   handler: async (ctx, { amount }) => {
     const user = await getCurrentUserWithProfile(ctx);
-    if (user.profile === null) {
+    if (user === null || user.profile === null) {
       throw new Error("プロフィールが見つかりません");
     }
 
@@ -123,14 +123,14 @@ export async function getCurrentUser(ctx: QueryCtx) {
 export async function getCurrentUserWithProfile(ctx: QueryCtx) {
   const user = await getCurrentUser(ctx);
   if (user === null) {
-    throw new Error("User not found");
+    return null;
   }
   const profile = await ctx.db
     .query("profiles")
     .withIndex("by_user_id", (q) => q.eq("user_id", user._id))
     .first();
   if (profile === null) {
-    throw new Error("Profile not found");
+    return null;
   }
   return {
     user: user._id,
