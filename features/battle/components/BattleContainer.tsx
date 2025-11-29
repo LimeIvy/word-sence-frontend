@@ -21,6 +21,7 @@ import { BattleResultModal } from "./modals/BattleResultModal";
 import { CardExchangeModal } from "./modals/CardExchangeModal";
 import { RoundResultModal } from "./modals/RoundResultModal";
 import { WordGenerationModal } from "./modals/WordGenerationModal";
+import { PhaseCutIn } from "./PhaseCutIn";
 
 export interface BattleContainerProps {
   /** バトルID */
@@ -395,6 +396,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-b from-amber-50 to-amber-100">
+      <PhaseCutIn currentPhase={currentPhase} />
       {/* メインコンテンツ: 縦3分割レイアウト */}
       <main className="flex-1 min-h-0 overflow-hidden container mx-auto px-2 pt-1 pb-1 max-w-[1600px]">
         <div className="grid grid-cols-12 gap-3 h-full">
