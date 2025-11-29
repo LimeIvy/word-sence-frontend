@@ -1,3 +1,4 @@
+import { BookOpen } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import type { RarityJapanese } from "../types/rarity";
 
@@ -368,6 +369,24 @@ export const WordCard = ({
                   {cardId}
                 </span>
               </div>
+            )}
+
+            {/* Wikipediaリンク */}
+            {typeof children === "string" && (
+              <a
+                href={`https://ja.wikipedia.org/wiki/${children}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-1 right-1 cursor-pointer hover:scale-110 transition-transform z-20"
+                onClick={(e) => e.stopPropagation()}
+                title={`${children}の意味を調べる`}
+              >
+                <BookOpen
+                  size={20}
+                  color="white"
+                  style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))" }}
+                />
+              </a>
             )}
           </div>
         </div>
