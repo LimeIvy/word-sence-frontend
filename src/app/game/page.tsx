@@ -96,12 +96,8 @@ export default function GamePage() {
       <div
         className="absolute inset-0 opacity-30"
         style={{
-          backgroundImage: `
-            radial-gradient(circle at 20% 30%, rgba(255,245,230,0.4) 0%, transparent 50%),
-            radial-gradient(circle at 80% 70%, rgba(255,245,230,0.3) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(255,245,230,0.2) 0%, transparent 60%)
-          `,
-          backgroundSize: "300px 300px, 350px 350px, 250px 250px",
+          background:
+            "linear-gradient(135deg, rgba(255,248,235,0.98) 0%, rgba(255,245,230,0.95) 50%, rgba(250,240,220,0.98) 100%)",
         }}
       />
 

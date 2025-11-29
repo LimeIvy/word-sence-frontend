@@ -94,6 +94,10 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     }
   }, [battleId, checkPhaseTimeoutMutation]);
 
+  // フェーズ変更の追跡（カットイン表示制御のため）
+  const [phaseChangeKey, setPhaseChangeKey] = useState(0);
+  const prevPhaseRef = useRef<string | null>(null);
+
   // フェーズタイマー
   // battleがまだロードされていない場合は、タイマーを開始しない（0を返す）
   const phaseStartTime = battle?.phase_start_time;
@@ -103,6 +107,18 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
     battleCurrentPhase,
     battle ? handlePhaseTimeout : undefined
   );
+
+  // フェーズが変わった時だけkeyを更新（PhaseCutInを再マウント）
+  useEffect(() => {
+    // battleが存在し、かつフェーズが実際に変わった場合のみ
+    if (battle && prevPhaseRef.current !== null && prevPhaseRef.current !== battleCurrentPhase) {
+      setPhaseChangeKey((prev) => prev + 1);
+    }
+    // battleが存在する場合のみ、現在のフェーズを保存
+    if (battle) {
+      prevPhaseRef.current = battleCurrentPhase;
+    }
+  }, [battle, battleCurrentPhase]);
 
   // モーダルハンドラー
   const handleExchangeClick = useCallback(() => {
@@ -377,7 +393,7 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
   }, [myPlayer, opponentPlayer, myName, opponentName, cardMap]);
 
   // ローディング状態
-  if (isLoading || !battle || !myPlayer || !opponentPlayer) {
+  if (!battle || !myPlayer || !opponentPlayer) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -395,215 +411,261 @@ export function BattleContainer({ battleId, myUserId }: BattleContainerProps) {
   const maxActions = 3;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-b from-amber-50 to-amber-100">
-      <PhaseCutIn currentPhase={currentPhase} />
-      {/* メインコンテンツ: 縦3分割レイアウト */}
-      <main className="flex-1 min-h-0 overflow-hidden container mx-auto px-2 pt-1 pb-1 max-w-[1600px]">
-        <div className="grid grid-cols-12 gap-3 h-full">
-          {/* 左カラム: FieldCard + ActionButtons */}
-          <div className="col-span-2 flex flex-col gap-2 h-full overflow-hidden">
-            {/* 上: FieldCard */}
-            <div className="flex-shrink-0 pt-2 mt-10">
-              <FieldCard word={fieldCardText} size="small" animated={true} />
-            </div>
-            {/* 下: ActionButtons と ActionCounter */}
-            <div className="flex-1 flex flex-col gap-8 min-h-0 overflow-hidden justify-center mr-2">
-              <ActionButtons
-                onExchange={handleExchangeClick}
-                onGenerate={handleGenerateClick}
-                exchangeDisabled={
-                  isActionLoading ||
-                  actionsRemaining === 0 ||
-                  currentPhase !== "player_action" ||
-                  Number(myPlayer.turn_state.deck_cards_remaining) === 0
-                }
-                generateDisabled={
-                  isActionLoading || actionsRemaining === 0 || currentPhase !== "player_action"
-                }
-                deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
-              />
-              <ActionCounter
-                actionsRemaining={actionsRemaining}
-                maxActions={maxActions}
-                warningThreshold={1}
-              />
-            </div>
-          </div>
-
-          {/* 中央カラム: BattleHeader + カードエリア */}
-          <div className="col-span-7 flex flex-col gap-2 h-full overflow-hidden">
-            {/* 上: BattleHeader */}
-            <div className="flex-shrink-0 flex justify-center min-w-0 px-2 mt-5 z-50">
-              <BattleHeader
-                player1Name={opponentName}
-                player1Score={opponentScore}
-                player2Name={myName}
-                player2Score={myScore}
-                currentRound={battle.current_round}
-                currentPhase={currentPhase}
-              />
-            </div>
-            {/* 下: カードエリア */}
-            <div className="flex-1 min-h-0 overflow-visible flex flex-col gap-1 mt-10">
-              {/* 中央上: OpponentHand */}
-              <div className="flex-[1] min-h-0 overflow-visible pt-2">
-                <OpponentHand
-                  cards={opponentHandCards}
-                  playerName={opponentName}
-                  showDeckRemaining={true}
-                  deckRemaining={Number(opponentPlayer.turn_state.deck_cards_remaining)}
-                  className="h-full gap-2"
-                />
-              </div>
-
-              {/* 中央下: HandArea */}
-              <div className="flex-[1] min-h-0 overflow-visible pt-2">
-                <HandArea
-                  cards={handAreaCards}
-                  selectedCardIds={
-                    currentPhase === "word_submission"
-                      ? selectedCardId
-                        ? [selectedCardId]
-                        : []
-                      : selectedCardIds
-                  }
-                  multiSelect={currentPhase === "player_action"}
-                  onCardSelect={handleCardSelect}
-                  showSimilarity={currentPhase === "word_submission"}
-                  playerName={myName}
-                  deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
-                  className="h-full gap-2"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 右カラム: Timer + ActionLog */}
-          <div className="col-span-3 flex flex-col gap-2 h-full overflow-hidden">
-            {/* 上: Timer */}
-            <div className="flex-shrink-0 mt-6">
-              <Timer
-                remainingTime={timeRemaining}
-                maxTime={maxTime}
-                size="medium"
-                warningThreshold={20}
-                dangerThreshold={10}
-              />
-            </div>
-            {/* 下: ActionLog */}
-            <div className="flex-1 min-h-0 overflow-hidden flex flex-col pt-2 mb-10">
-              <ActionLog logs={actionLogs} maxItems={8} className="h-full" />
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* フェーズ別アクション */}
-      {currentPhase === "word_submission" && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-40">
-          {selectedCardId && (
-            <>
-              <button
-                onClick={() => handleNormalSubmit(selectedCardId)}
-                disabled={isActionLoading}
-                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none cursor-pointer disabled:cursor-not-allowed"
-                style={{
-                  background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
-                  border: "2px solid rgba(96,165,250,0.7)",
-                  color: "white",
-                  boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
-                }}
-              >
-                通常提出
-              </button>
-              <button
-                onClick={() => handleVictoryDeclaration(selectedCardId)}
-                disabled={isActionLoading}
-                className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none cursor-pointer disabled:cursor-not-allowed"
-                style={{
-                  background: "linear-gradient(135deg, rgba(239,68,68,0.95), rgba(185,28,28,0.9))",
-                  border: "2px solid rgba(248,113,113,0.7)",
-                  color: "white",
-                  boxShadow: "0 4px 12px rgba(239,68,68,0.4)",
-                }}
-              >
-                勝利宣言
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {currentPhase === "response" && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-40">
-          <button
-            onClick={handleCall}
-            disabled={isActionLoading}
-            className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
-            style={{
-              background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
-              border: "2px solid rgba(96,165,250,0.7)",
-              color: "white",
-              boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
-            }}
-          >
-            コール
-          </button>
-          <button
-            onClick={handleFold}
-            disabled={isActionLoading}
-            className="px-6 py-3 rounded-lg font-bold text-lg transition-all select-none"
-            style={{
-              background: "linear-gradient(135deg, rgba(156,163,175,0.95), rgba(107,114,128,0.9))",
-              border: "2px solid rgba(209,213,219,0.7)",
-              color: "white",
-              boxShadow: "0 4px 12px rgba(156,163,175,0.4)",
-            }}
-          >
-            フォールド
-          </button>
-        </div>
-      )}
-
-      {/* モーダル */}
-      <CardExchangeModal
-        isOpen={isExchangeModalOpen}
-        onClose={() => {
-          setIsExchangeModalOpen(false);
-          setSelectedCardIds([]);
+    <div className="h-screen flex flex-col overflow-hidden relative">
+      {/* 背景 - 和紙テクスチャ */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(255,248,235,0.95) 0%, rgba(255,245,230,0.98) 50%, rgba(250,240,220,0.95) 100%)",
         }}
-        cards={myHand}
-        deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
-        onExchange={handleExchange}
-        isLoading={isActionLoading}
+      />
+      <div
+        className="absolute inset-0 opacity-40 z-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(245,230,200,0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(240,220,180,0.2) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(235,215,175,0.15) 0%, transparent 60%)
+          `,
+          backgroundSize: "300px 300px, 350px 350px, 250px 250px",
+        }}
       />
 
-      <WordGenerationModal
-        isOpen={isGenerateModalOpen}
-        onClose={() => setIsGenerateModalOpen(false)}
-        cards={myHand}
-        onGenerate={handleGenerate}
-        isLoading={isActionLoading}
-      />
+      {/* 装飾的な桜 */}
+      <div className="absolute top-10 left-10 text-4xl opacity-20 animate-pulse select-none z-0 pointer-events-none">
+        🌸
+      </div>
+      <div className="absolute top-20 right-20 text-3xl opacity-20 animate-pulse delay-150 select-none z-0 pointer-events-none">
+        🌸
+      </div>
+      <div className="absolute bottom-10 right-10 text-4xl opacity-20 animate-pulse delay-450 select-none z-0 pointer-events-none">
+        🌸
+      </div>
 
-      {latestRoundResult && (
-        <RoundResultModal
-          isOpen={isRoundResultModalOpen}
-          onClose={() => setIsRoundResultModalOpen(false)}
-          roundResult={latestRoundResult}
-          myUserId={myUserId}
+      <div className="relative z-10 h-full flex flex-col overflow-hidden">
+        <PhaseCutIn
+          key={phaseChangeKey}
+          currentPhase={currentPhase}
+          fieldCardText={fieldCardText}
         />
-      )}
+        {/* メインコンテンツ: 縦3分割レイアウト */}
+        <main className="flex-1 min-h-0 overflow-hidden container mx-auto px-2 pt-1 pb-1 max-w-[1600px]">
+          <div className="grid grid-cols-12 gap-3 h-full">
+            {/* 左カラム: FieldCard + ActionButtons */}
+            <div className="col-span-2 flex flex-col gap-2 h-full overflow-hidden">
+              <div className="flex-shrink-0 pt-2 mt-10">
+                <FieldCard word={fieldCardText} size="small" animated={true} />
+              </div>
+              {/* 下: ActionButtons と ActionCounter */}
+              <div className="flex-1 flex flex-col gap-8 min-h-0 overflow-hidden justify-center mr-2">
+                <ActionButtons
+                  onExchange={handleExchangeClick}
+                  onGenerate={handleGenerateClick}
+                  exchangeDisabled={
+                    isActionLoading ||
+                    actionsRemaining === 0 ||
+                    currentPhase !== "player_action" ||
+                    Number(myPlayer.turn_state.deck_cards_remaining) === 0
+                  }
+                  generateDisabled={
+                    isActionLoading || actionsRemaining === 0 || currentPhase !== "player_action"
+                  }
+                  deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
+                />
+                <ActionCounter
+                  actionsRemaining={actionsRemaining}
+                  maxActions={maxActions}
+                  warningThreshold={1}
+                />
+              </div>
+            </div>
 
-      {battle && (
-        <BattleResultModal
-          isOpen={isBattleResultModalOpen}
-          onClose={() => setIsBattleResultModalOpen(false)}
-          battle={battle}
-          myUserId={myUserId}
-          onGoHome={() => router.push("/game")}
+            {/* 中央カラム: BattleHeader + カードエリア */}
+            <div className="col-span-7 flex flex-col gap-2 h-full overflow-hidden">
+              {/* 上: BattleHeader */}
+              <div className="flex-shrink-0 flex justify-center min-w-0 px-2 mt-5 z-50">
+                <BattleHeader
+                  player1Name={opponentName}
+                  player1Score={opponentScore}
+                  player2Name={myName}
+                  player2Score={myScore}
+                  currentRound={battle.current_round}
+                  currentPhase={currentPhase}
+                />
+              </div>
+              {/* 下: カードエリア */}
+              <div className="flex-1 min-h-0 overflow-visible flex flex-col gap-1 mt-10">
+                {/* 中央上: OpponentHand */}
+                <div className="flex-[1] min-h-0 overflow-visible pt-2">
+                  <OpponentHand
+                    cards={opponentHandCards}
+                    playerName={opponentName}
+                    showDeckRemaining={true}
+                    deckRemaining={Number(opponentPlayer.turn_state.deck_cards_remaining)}
+                    className="h-full gap-2"
+                  />
+                </div>
+
+                {/* 中央下: HandArea */}
+                <div className="flex-[1] min-h-0 overflow-visible pt-2">
+                  <HandArea
+                    cards={handAreaCards}
+                    selectedCardIds={
+                      currentPhase === "word_submission"
+                        ? selectedCardId
+                          ? [selectedCardId]
+                          : []
+                        : selectedCardIds
+                    }
+                    multiSelect={currentPhase === "player_action"}
+                    onCardSelect={handleCardSelect}
+                    showSimilarity={currentPhase === "word_submission"}
+                    playerName={myName}
+                    deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
+                    className="h-full gap-2"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 右カラム: Timer + ActionLog */}
+            <div className="col-span-3 flex flex-col gap-2 h-full overflow-hidden">
+              {/* 上: Timer */}
+              <div className="flex-shrink-0 mt-6">
+                <Timer
+                  remainingTime={timeRemaining}
+                  maxTime={maxTime}
+                  size="medium"
+                  warningThreshold={20}
+                  dangerThreshold={10}
+                />
+              </div>
+              {/* 下: ActionLog */}
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col pt-2 mb-10">
+                <ActionLog logs={actionLogs} maxItems={8} className="h-full" />
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* フェーズ別アクション */}
+        {currentPhase === "word_submission" && (
+          <div className="fixed right-8 bottom-32 flex flex-col gap-6 z-40">
+            {selectedCardId && (
+              <>
+                <button
+                  onClick={() => handleNormalSubmit(selectedCardId)}
+                  disabled={isActionLoading}
+                  className="group relative w-16 py-6 bg-[#FDF6E3] border-2 border-indigo-900/30 rounded-lg shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                  style={{
+                    writingMode: "vertical-rl",
+                    fontFamily: "'Noto Serif JP', serif",
+                  }}
+                >
+                  <div className="absolute inset-0 bg-indigo-900/5 group-hover:bg-indigo-900/10 transition-colors" />
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-indigo-900/30" />
+                  <span className="text-xl font-bold text-indigo-900 tracking-[0.3em] py-2">
+                    通常提出
+                  </span>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 border-2 border-indigo-900/20 rounded-full opacity-50" />
+                </button>
+
+                <button
+                  onClick={() => handleVictoryDeclaration(selectedCardId)}
+                  disabled={isActionLoading}
+                  className="group relative w-16 py-6 bg-gradient-to-b from-rose-600 to-red-700 border-2 border-rose-400 rounded-lg shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
+                  style={{
+                    writingMode: "vertical-rl",
+                    fontFamily: "'Noto Serif JP', serif",
+                  }}
+                >
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/seigaiha.png')] opacity-20" />
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white/50" />
+                  <span className="text-xl font-black text-white tracking-[0.3em] py-2 drop-shadow-md">
+                    勝利宣言
+                  </span>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-10 h-10 border-2 border-white/30 rounded-full" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {currentPhase === "response" && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4 z-40">
+            <button
+              onClick={handleCall}
+              disabled={isActionLoading}
+              className="px-8 py-3 rounded-full font-bold text-lg transition-all select-none shadow-lg hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9))",
+                border: "2px solid rgba(147,197,253,0.5)",
+                color: "white",
+                boxShadow: "0 4px 15px rgba(59,130,246,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+                textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              }}
+            >
+              コール
+            </button>
+            <button
+              onClick={handleFold}
+              disabled={isActionLoading}
+              className="px-8 py-3 rounded-full font-bold text-lg transition-all select-none shadow-lg hover:scale-105 active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, rgba(107,114,128,0.95), rgba(75,85,99,0.9))",
+                border: "2px solid rgba(156,163,175,0.5)",
+                color: "white",
+                boxShadow:
+                  "0 4px 15px rgba(107,114,128,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+                textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+              }}
+            >
+              フォールド
+            </button>
+          </div>
+        )}
+
+        {/* モーダル */}
+        <CardExchangeModal
+          isOpen={isExchangeModalOpen}
+          onClose={() => {
+            setIsExchangeModalOpen(false);
+            setSelectedCardIds([]);
+          }}
+          cards={myHand}
+          deckRemaining={Number(myPlayer.turn_state.deck_cards_remaining)}
+          onExchange={handleExchange}
+          isLoading={isActionLoading}
         />
-      )}
+
+        <WordGenerationModal
+          isOpen={isGenerateModalOpen}
+          onClose={() => setIsGenerateModalOpen(false)}
+          cards={myHand}
+          onGenerate={handleGenerate}
+          isLoading={isActionLoading}
+        />
+
+        {latestRoundResult && (
+          <RoundResultModal
+            isOpen={isRoundResultModalOpen}
+            onClose={() => setIsRoundResultModalOpen(false)}
+            roundResult={latestRoundResult}
+            myUserId={myUserId}
+          />
+        )}
+
+        {battle && (
+          <BattleResultModal
+            isOpen={isBattleResultModalOpen}
+            onClose={() => setIsBattleResultModalOpen(false)}
+            battle={battle}
+            myUserId={myUserId}
+            onGoHome={() => router.push("/game")}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Layers, RefreshCw, Sparkles } from "lucide-react";
 import React from "react";
 
 export interface ActionButtonsProps {
@@ -5,14 +6,10 @@ export interface ActionButtonsProps {
   onExchange?: () => void;
   /** 単語生成ボタンのコールバック */
   onGenerate?: () => void;
-  /** 準備完了ボタンのコールバック */
-  onReady?: () => void;
   /** カード交換ボタンが無効か */
   exchangeDisabled?: boolean;
   /** 単語生成ボタンが無効か */
   generateDisabled?: boolean;
-  /** 準備完了ボタンが無効か */
-  readyDisabled?: boolean;
   /** デッキ残り枚数 */
   deckRemaining?: number;
   className?: string;
@@ -22,10 +19,8 @@ export const ActionButtons = React.memo(
   ({
     onExchange,
     onGenerate,
-    onReady,
     exchangeDisabled = false,
     generateDisabled = false,
-    readyDisabled = false,
     deckRemaining,
     className = "",
   }: ActionButtonsProps) => {
@@ -78,7 +73,7 @@ export const ActionButtons = React.memo(
           >
             {/* 和紙テクスチャ */}
             <div
-              className="absolute inset-0 opacity-10"
+              className="absolute inset-0 opacity-10 pointer-events-none"
               style={{
                 backgroundImage: `
                 radial-gradient(circle at 20% 30%, rgba(255,245,230,0.4) 0%, transparent 50%),
@@ -88,7 +83,7 @@ export const ActionButtons = React.memo(
             />
 
             <div className="flex items-center gap-2 relative z-10">
-              <span className="text-xl">🔄</span>
+              <RefreshCw className="w-6 h-6 text-amber-50 drop-shadow-md" />
               <div className="text-left">
                 <div className="flex items-center gap-2">
                   <span
@@ -121,7 +116,7 @@ export const ActionButtons = React.memo(
                   border: "1px solid rgba(218,165,32,0.5)",
                 }}
               >
-                <span className="text-sm">🎴</span>
+                <Layers className="w-4 h-4 text-amber-50" />
                 <span
                   className="text-sm font-bold select-none"
                   style={{
@@ -180,7 +175,7 @@ export const ActionButtons = React.memo(
           >
             {/* 和紙テクスチャ */}
             <div
-              className="absolute inset-0 opacity-10"
+              className="absolute inset-0 opacity-10 pointer-events-none"
               style={{
                 backgroundImage: `
                 radial-gradient(circle at 20% 30%, rgba(255,245,230,0.4) 0%, transparent 50%),
@@ -190,7 +185,7 @@ export const ActionButtons = React.memo(
             />
 
             <div className="flex items-center gap-2 relative z-10">
-              <span className="text-xl">⚗️</span>
+              <Sparkles className="w-6 h-6 text-amber-50 drop-shadow-md" />
               <div className="text-left">
                 <div className="flex items-center gap-2">
                   <span
@@ -227,86 +222,6 @@ export const ActionButtons = React.memo(
               </div>
             )}
           </button>
-
-          {/* 準備完了ボタン */}
-          <div className="relative">
-            {/* グローエフェクト */}
-            <div
-              className="absolute inset-0 rounded-xl opacity-50 animate-pulse"
-              style={{
-                background: "linear-gradient(135deg, rgba(139,69,19,0.8), rgba(101,67,33,0.7))",
-                filter: "blur(8px)",
-              }}
-            />
-            <button
-              onClick={onReady}
-              disabled={readyDisabled}
-              className="relative w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-black text-lg transition-all duration-200 overflow-hidden"
-              style={{
-                background: readyDisabled
-                  ? "linear-gradient(135deg, rgba(75,75,75,0.9), rgba(50,50,50,0.9))"
-                  : "linear-gradient(135deg, rgba(139,69,19,0.95), rgba(101,67,33,0.9))",
-                border: readyDisabled
-                  ? "2px solid rgba(100,100,100,0.6)"
-                  : "2px solid rgba(218,165,32,0.7)",
-                boxShadow: readyDisabled
-                  ? "0 2px 8px rgba(0,0,0,0.3)"
-                  : "0 6px 20px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,245,230,0.2), 0 0 12px rgba(218,165,32,0.4)",
-                cursor: readyDisabled ? "not-allowed" : "pointer",
-                opacity: readyDisabled ? 0.5 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!readyDisabled) {
-                  e.currentTarget.style.transform = "scale(1.02)";
-                  e.currentTarget.style.boxShadow =
-                    "0 8px 24px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,245,230,0.2), 0 0 16px rgba(218,165,32,0.5)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!readyDisabled) {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow =
-                    "0 6px 20px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,245,230,0.2), 0 0 12px rgba(218,165,32,0.4)";
-                }
-              }}
-              onMouseDown={(e) => {
-                if (!readyDisabled) {
-                  e.currentTarget.style.transform = "scale(0.98)";
-                }
-              }}
-              onMouseUp={(e) => {
-                if (!readyDisabled) {
-                  e.currentTarget.style.transform = "scale(1.02)";
-                }
-              }}
-            >
-              {/* 和紙テクスチャ */}
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage: `
-                  radial-gradient(circle at 20% 30%, rgba(255,245,230,0.4) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 70%, rgba(255,245,230,0.3) 0%, transparent 50%)
-                `,
-                }}
-              />
-
-              {/* 桜の花びら装飾 */}
-              <div className="absolute top-2 left-2 text-lg opacity-30">🌸</div>
-              <div className="absolute top-2 right-2 text-lg opacity-30">🌸</div>
-
-              <span className="text-2xl relative z-10">✅</span>
-              <span
-                className="relative z-10 select-none"
-                style={{
-                  color: "#FFF5E6",
-                  textShadow: "0 2px 4px rgba(0,0,0,0.6)",
-                }}
-              >
-                準備完了
-              </span>
-            </button>
-          </div>
         </div>
       </div>
     );
