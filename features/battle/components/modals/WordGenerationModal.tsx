@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Minus, Plus, Sparkles } from "lucide-react";
+import { Loader2, Minus, Plus, Sparkles, XCircle } from "lucide-react";
 import { useState } from "react";
 import type { Card } from "../../../common/types/card";
 import { HandCard } from "../HandCard";
@@ -101,114 +101,130 @@ export function WordGenerationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="w-5 h-5" />
-            単語生成
+      <DialogContent
+        className="max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col border-4 border-amber-700/50 bg-[#FDF6E3]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)),
+            url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23d4a373' fill-opacity='0.2' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")
+          `,
+        }}
+      >
+        <DialogHeader className="flex-shrink-0 border-b-2 border-amber-700/20 pb-4">
+          <DialogTitle className="flex items-center justify-center gap-3 text-2xl font-black text-amber-900 tracking-widest">
+            <Sparkles className="w-6 h-6 text-amber-600" />
+            <span style={{ fontFamily: "'Noto Serif JP', serif" }}>単語生成</span>
+            <Sparkles className="w-6 h-6 text-amber-600" />
           </DialogTitle>
-          <DialogDescription>
-            +ゾーンと-ゾーンにカードを配置して新しい単語を生成します（合計2-5枚）
-            <br />
-            <span className="text-xs text-gray-500">
-              💡 左クリックで+ゾーン、右クリックで-ゾーンに追加
-            </span>
+          <DialogDescription className="text-center text-amber-800/70 font-medium mt-2">
+            言葉を組み合わせ、新たな意味を創造します
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 flex-1 overflow-y-auto min-h-0">
-          {/* +ゾーン */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-green-600" />
-              <Label className="text-base font-semibold">+ゾーン（意味を加算）</Label>
-              <span className="text-sm text-gray-600">{positiveCardIds.length}枚選択中</span>
+        <div className="space-y-6 py-4 flex-1 overflow-y-auto min-h-0 px-4">
+          <div className="grid grid-cols-2 gap-8">
+            {/* +ゾーン */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-lg font-bold text-amber-900 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-amber-600" />
+                  加算
+                </Label>
+                <span className="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+                  {positiveCardIds.length}枚
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-center gap-8 px-4 py-6 bg-amber-50/50 rounded-xl border-2 border-dashed border-amber-300/50 min-h-[200px] shadow-inner">
+                {positiveCardIds.length === 0 ? (
+                  <div className="w-full flex flex-col items-center justify-center h-40 text-amber-400/50">
+                    <span className="text-4xl mb-2 select-none opacity-50">+</span>
+                    <span className="text-sm font-bold">意味を加えるカード</span>
+                  </div>
+                ) : (
+                  positiveCardIds.map((cardId) => {
+                    const card = cards.find((c) => c.id === cardId);
+                    if (!card) return null;
+                    return (
+                      <div
+                        key={cardId}
+                        className="relative transition-all hover:scale-105 hover:-translate-y-1"
+                        onClick={() => handlePositiveCardClick(cardId)}
+                      >
+                        <HandCard
+                          card={card}
+                          selected={true}
+                          disabled={isLoading}
+                          onCardClick={() => handlePositiveCardClick(cardId)}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-3 px-4 py-6 bg-green-50 rounded-lg border-2 border-dashed border-green-300 min-h-[160px]">
-              {positiveCardIds.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <span className="text-2xl mb-1">+</span>
-                  <span className="text-xs">ここにカードを配置</span>
-                </div>
-              ) : (
-                positiveCardIds.map((cardId) => {
-                  const card = cards.find((c) => c.id === cardId);
-                  if (!card) return null;
-                  return (
-                    <div
-                      key={cardId}
-                      className="relative transition-all hover:scale-105"
-                      onClick={() => handlePositiveCardClick(cardId)}
-                    >
-                      <HandCard
-                        card={card}
-                        selected={true}
-                        disabled={isLoading}
-                        onCardClick={() => handlePositiveCardClick(cardId)}
-                      />
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
 
-          {/* -ゾーン */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Minus className="w-5 h-5 text-red-600" />
-              <Label className="text-base font-semibold">-ゾーン（意味を減算）</Label>
-              <span className="text-sm text-gray-600">{negativeCardIds.length}枚選択中</span>
-            </div>
-            <div
-              className="flex items-center justify-center gap-3 px-4 py-6 bg-red-50 rounded-lg border-2 border-dashed border-red-300 min-h-[160px] cursor-pointer"
-              onClick={(e) => {
-                // 未選択カードを右クリックまたはShift+クリックで-ゾーンに追加する機能は、未選択カードエリアで処理
-                if (e.target === e.currentTarget) {
-                  return;
-                }
-              }}
-            >
-              {negativeCardIds.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <span className="text-2xl mb-1">-</span>
-                  <span className="text-xs">ここにカードを配置</span>
-                </div>
-              ) : (
-                negativeCardIds.map((cardId) => {
-                  const card = cards.find((c) => c.id === cardId);
-                  if (!card) return null;
-                  return (
-                    <div
-                      key={cardId}
-                      className="relative transition-all hover:scale-105"
-                      onClick={() => handleNegativeCardClick(cardId)}
-                    >
-                      <HandCard
-                        card={card}
-                        selected={true}
-                        disabled={isLoading}
-                        onCardClick={() => handleNegativeCardClick(cardId)}
-                      />
-                    </div>
-                  );
-                })
-              )}
+            {/* -ゾーン */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-lg font-bold text-amber-900 flex items-center gap-2">
+                  <Minus className="w-5 h-5 text-amber-600" />
+                  減算
+                </Label>
+                <span className="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+                  {negativeCardIds.length}枚
+                </span>
+              </div>
+              <div
+                className="flex flex-wrap justify-center gap-8 px-4 py-6 bg-amber-50/50 rounded-xl border-2 border-dashed border-amber-300/50 min-h-[200px] shadow-inner cursor-pointer hover:bg-amber-50 transition-colors"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) return;
+                }}
+              >
+                {negativeCardIds.length === 0 ? (
+                  <div className="w-full flex flex-col items-center justify-center h-40 text-amber-400/50">
+                    <span className="text-4xl mb-2 select-none opacity-50">-</span>
+                    <span className="text-sm font-bold">意味を引くカード</span>
+                  </div>
+                ) : (
+                  negativeCardIds.map((cardId) => {
+                    const card = cards.find((c) => c.id === cardId);
+                    if (!card) return null;
+                    return (
+                      <div
+                        key={cardId}
+                        className="relative transition-all hover:scale-105 hover:-translate-y-1"
+                        onClick={() => handleNegativeCardClick(cardId)}
+                      >
+                        <HandCard
+                          card={card}
+                          selected={true}
+                          disabled={isLoading}
+                          onCardClick={() => handleNegativeCardClick(cardId)}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
 
           {/* 未選択カード */}
           {unselectedCards.length > 0 && (
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">手札から選択</Label>
-              <div className="flex justify-center gap-3 px-4 py-4 bg-gray-50 rounded-lg border border-gray-300 min-h-[120px] flex-wrap">
+            <div className="space-y-3 pt-4 border-t-2 border-amber-700/20">
+              <Label className="text-lg font-bold text-amber-900 flex items-center gap-2">
+                <span className="w-1 h-6 bg-amber-600 rounded-full" />
+                手札から選択
+                <span className="text-xs font-normal text-amber-700 ml-2">
+                  (左クリック: +ゾーン / 右クリック: -ゾーン)
+                </span>
+              </Label>
+              <div className="flex justify-center gap-4 px-4 py-6 bg-white/50 rounded-xl border border-amber-200 min-h-[120px] flex-wrap shadow-sm">
                 {unselectedCards.map((card) => (
                   <div
                     key={card.id}
-                    className="relative transition-all hover:scale-105 cursor-pointer"
-                    onClick={() => {
-                      handlePositiveCardClick(card.id);
-                    }}
+                    className="relative transition-all hover:scale-105 hover:-translate-y-1 cursor-pointer"
+                    onClick={() => handlePositiveCardClick(card.id)}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       handleNegativeCardClick(card.id);
@@ -225,70 +241,69 @@ export function WordGenerationModal({
             </div>
           )}
 
-          {/* 選択状況表示とベクトル演算プレビューを横並びに */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* 選択状況表示 */}
-            <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-blue-900">選択状況</span>
-                <span className="text-blue-700">{totalCards}枚</span>
-              </div>
-              {!canGenerate && totalCards > 0 && (
-                <div className="mt-2 text-xs text-red-600">
-                  {totalCards < 2
-                    ? "カードを2枚以上選択してください"
-                    : "カードは最大5枚まで選択できます"}
-                </div>
-              )}
+          {/* プレビューエリア */}
+          <div className="bg-white/80 rounded-xl p-4 border border-amber-200 shadow-sm">
+            <div className="text-sm font-bold text-amber-900 mb-2 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              生成プレビュー
             </div>
-
-            {/* ベクトル演算プレビュー */}
-            {canGenerate && (
-              <div className="px-4 py-3 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="text-sm font-semibold text-purple-900 mb-2">
-                  ベクトル演算プレビュー
-                </div>
-                <div className="text-xs text-purple-700 space-y-1">
-                  <div>
-                    +:{" "}
-                    {positiveCardIds.map((id) => cards.find((c) => c.id === id)?.name).join(" + ")}
-                  </div>
-                  {negativeCardIds.length > 0 && (
-                    <div>
-                      -:{" "}
-                      {negativeCardIds
-                        .map((id) => cards.find((c) => c.id === id)?.name)
-                        .join(" + ")}
-                    </div>
-                  )}
-                </div>
+            <div className="font-mono text-lg text-amber-800 flex flex-wrap items-center gap-2">
+              {positiveCardIds.length === 0 && negativeCardIds.length === 0 && (
+                <span className="text-stone-400 text-sm">カードを選択してください</span>
+              )}
+              {positiveCardIds.map((id, i) => (
+                <span key={id} className="bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                  {i > 0 && <span className="text-amber-400 mr-1">+</span>}
+                  {cards.find((c) => c.id === id)?.name}
+                </span>
+              ))}
+              {negativeCardIds.map((id) => (
+                <span key={id} className="bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                  <span className="text-amber-400 mr-1">-</span>
+                  {cards.find((c) => c.id === id)?.name}
+                </span>
+              ))}
+            </div>
+            {!canGenerate && totalCards > 0 && (
+              <div className="mt-2 text-xs font-bold text-red-600 flex items-center gap-1">
+                <XCircle className="w-3 h-3" />
+                {totalCards < 2 ? "あと1枚以上必要です" : "最大5枚までです"}
               </div>
             )}
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0">
-          <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+        <DialogFooter className="flex-shrink-0 border-t-2 border-amber-700/20 pt-4 sm:justify-center gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleClose}
+            disabled={isLoading}
+            className="text-stone-600 hover:text-stone-900 hover:bg-stone-100 font-bold"
+          >
             キャンセル
           </Button>
           <Button
             onClick={handleGenerate}
             disabled={!canGenerate || isLoading}
-            className="flex items-center gap-2"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-10 py-6 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
-              background: "linear-gradient(135deg, rgba(168,85,247,0.95), rgba(147,51,234,0.9))",
-              border: "2px solid rgba(192,132,252,0.7)",
-              color: "white",
+              background: !canGenerate
+                ? undefined
+                : "linear-gradient(135deg, rgba(217,119,6,0.95), rgba(180,83,9,0.9))",
+              boxShadow: !canGenerate
+                ? undefined
+                : "0 4px 15px rgba(217,119,6,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
             }}
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 生成中...
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-5 h-5" />
                 生成する
               </>
             )}

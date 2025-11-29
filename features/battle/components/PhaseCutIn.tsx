@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BattlePhase, PHASE_DISPLAY_NAMES } from "../types/phase";
+import { FieldCard } from "./FieldCard";
 
 interface PhaseCutInProps {
   currentPhase: BattlePhase;
+  fieldCardText?: string;
 }
 
 const PHASE_COLORS: Record<BattlePhase, { from: string; to: string; shadow: string }> = {
@@ -34,7 +36,7 @@ const PHASE_COLORS: Record<BattlePhase, { from: string; to: string; shadow: stri
   },
 };
 
-export function PhaseCutIn({ currentPhase }: PhaseCutInProps) {
+export function PhaseCutIn({ currentPhase, fieldCardText }: PhaseCutInProps) {
   const [show, setShow] = useState(false);
   const [displayPhase, setDisplayPhase] = useState<BattlePhase>(currentPhase);
 
@@ -50,6 +52,11 @@ export function PhaseCutIn({ currentPhase }: PhaseCutInProps) {
 
   const colors = PHASE_COLORS[displayPhase];
 
+  // 判定フェーズはカットインを表示しない（モーダルと被るため）
+  if (displayPhase === "point_calculation") {
+    return null;
+  }
+
   return (
     <AnimatePresence>
       {show && (
@@ -59,7 +66,7 @@ export function PhaseCutIn({ currentPhase }: PhaseCutInProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
         >
           {/* 背景のブラーと暗転 */}
           <motion.div
@@ -70,40 +77,59 @@ export function PhaseCutIn({ currentPhase }: PhaseCutInProps) {
           />
 
           {/* テキストコンテナ */}
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0, y: 50 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)" }}
-            transition={{ type: "spring", damping: 12, stiffness: 100 }}
-            className="relative z-10 flex flex-col items-center"
-          >
-            {/* 装飾ライン（上） */}
+          {displayPhase === "field_card_presentation" ? (
+            // お題提示フェーズ：お題カードを大きく表示
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "120%", opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className={`h-1 w-full bg-gradient-to-r ${colors.from} ${colors.to} mb-4 rounded-full shadow-[0_0_10px_${colors.shadow}]`}
-            />
-
-            {/* メインテキスト */}
-            <h1
-              className={`text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r ${colors.from} ${colors.to} tracking-wider`}
-              style={{
-                filter: `drop-shadow(0 0 20px ${colors.shadow})`,
-                fontFamily: "'Inter', sans-serif", // モダンなフォントを指定（プロジェクトに合わせて調整）
-              }}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1.5, rotate: 0 }}
+              exit={{ scale: 2, opacity: 0 }}
+              transition={{ type: "spring", damping: 12, stiffness: 100 }}
+              className="relative z-10"
             >
-              {PHASE_DISPLAY_NAMES[displayPhase]}
-            </h1>
-
-            {/* 装飾ライン（下） */}
+              <FieldCard
+                word={fieldCardText || "???"}
+                size="medium"
+                animated={false} // FieldCard自体のアニメーションはオフにして、framer-motionで制御
+                className="pointer-events-none"
+              />
+            </motion.div>
+          ) : (
+            // 通常フェーズ：テキスト表示
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "120%", opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className={`h-1 w-full bg-gradient-to-r ${colors.from} ${colors.to} mt-4 rounded-full shadow-[0_0_10px_${colors.shadow}]`}
-            />
-          </motion.div>
+              initial={{ scale: 0.5, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)" }}
+              transition={{ type: "spring", damping: 12, stiffness: 100 }}
+              className="relative z-10 flex flex-col items-center"
+            >
+              {/* 装飾ライン（上） */}
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "120%", opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className={`h-1 w-full bg-gradient-to-r ${colors.from} ${colors.to} mb-4 rounded-full shadow-[0_0_10px_${colors.shadow}]`}
+              />
+
+              {/* メインテキスト */}
+              <h1
+                className={`text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r ${colors.from} ${colors.to} tracking-wider`}
+                style={{
+                  filter: `drop-shadow(0 0 20px ${colors.shadow})`,
+                  fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                {PHASE_DISPLAY_NAMES[displayPhase]}
+              </h1>
+
+              {/* 装飾ライン（下） */}
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "120%", opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className={`h-1 w-full bg-gradient-to-r ${colors.from} ${colors.to} mt-4 rounded-full shadow-[0_0_10px_${colors.shadow}]`}
+              />
+            </motion.div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
